@@ -1,11 +1,132 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
 
 // Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
 // Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
 ---
 
-<Layout>
-	<Welcome />
+<Layout title="Jordan Pitts | Systems, Strategy & AI">
+	<main class="max-w-4xl mx-auto px-6 py-24 md:py-32">
+		
+		<!-- Header / Intro -->
+		<header class="mb-32 animate-fade-in">
+			<h1 class="text-5xl md:text-7xl font-semibold tracking-tight text-white mb-8">
+				Jordan Pitts
+			</h1>
+			<p class="text-xl md:text-2xl text-zinc-400 font-serif italic max-w-2xl leading-relaxed">
+				I take problems apart fast and rebuild them better. From farm labour to Michelin kitchens to digital strategy, I solve problems and build systems that scale. 
+			</p>
+			<p class="mt-6 text-zinc-300 max-w-2xl font-sans text-lg">
+				No hard sell, no ketchup. Just clarity, taste, and execution.
+			</p>
+		</header>
+
+		<!-- Who I am / Unconventional Path -->
+		<section class="mb-32">
+			<h2 class="text-3xl md:text-4xl font-medium mb-12 flex items-center">
+				<span class="text-[#c6a353] mr-4 text-2xl">01</span> The Unconventional Path
+			</h2>
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-12 text-zinc-300 text-lg leading-relaxed">
+				<div>
+					<p class="mb-6">
+						My path hasn't been a straight line through a computer science degree. I learned speed and precision working 16-hour shifts as a Chef de Partie in Michelin-starred kitchens. I learned logistics and business fundamentals trading copper wire and working farm harvests before the sun came up.
+					</p>
+					<p>
+						That unconventional foundation taught me to thrive under pressure. When the pandemic hit in 2020, I managed 23 hotel properties in Italy and converted nearly 100% of bookings to future credits while competitors lost 90% of their revenue.
+					</p>
+				</div>
+				<div>
+					<p class="mb-6">
+						I pioneered marketing automation for UK automotive retail—advancing industry standards and helping scale a company's online revenue from &lt;£1m to £12m in just 11 months. 
+					</p>
+					<p>
+						Today, I architect AI-powered workflows, write full-stack code (React, Astro, Python), and partner with growth-stage companies as an embedded strategic advisor. I don't just execute tasks; I build systems.
+					</p>
+				</div>
+			</div>
+		</section>
+
+		<!-- Selected Projects -->
+		<section class="mb-32">
+			<h2 class="text-3xl md:text-4xl font-medium mb-12 flex items-center">
+				<span class="text-[#c6a353] mr-4 text-2xl">02</span> Selected Work
+			</h2>
+			
+			<div class="space-y-16">
+				<!-- Pool Game -->
+				<div class="group relative grid grid-cols-1 md:grid-cols-12 gap-8 items-center border border-zinc-800 rounded-2xl p-8 hover:border-zinc-700 transition-colors">
+					<div class="md:col-span-8">
+						<h3 class="text-2xl font-semibold mb-3">English Pool Simulator</h3>
+						<p class="text-zinc-400 mb-6">A mobile-first, physics-based English 8-ball pool game built natively in the browser without heavyweight third-party physics libraries. Features custom rigid body collisions, Zustand state rules engine, touch-aim, and procedural web audio.</p>
+						<div class="flex flex-wrap gap-3 mb-6">
+							<span class="px-3 py-1 bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 rounded-full font-mono">React 18</span>
+							<span class="px-3 py-1 bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 rounded-full font-mono">PixiJS</span>
+							<span class="px-3 py-1 bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 rounded-full font-mono">Zustand</span>
+						</div>
+						<a href="https://pool-ochre.vercel.app" target="_blank" rel="noopener noreferrer" class="inline-flex items-center text-[#c6a353] hover:text-white transition-colors">
+							Play Live <span class="ml-2">→</span>
+						</a>
+					</div>
+				</div>
+
+				<!-- Northern Belle -->
+				<div class="group relative grid grid-cols-1 md:grid-cols-12 gap-8 items-center border border-zinc-800 rounded-2xl p-8 hover:border-zinc-700 transition-colors">
+					<div class="md:col-span-8">
+						<h3 class="text-2xl font-semibold mb-3">Northern Belle</h3>
+						<p class="text-zinc-400 mb-6">Growth & Performance consulting for the UK's premier luxury heritage dining train. Overseeing spring marketing, high-end commercial partnerships (Moët Hennessy), Intercom rollout, and occupancy/revenue analytics.</p>
+						<div class="flex flex-wrap gap-3">
+							<span class="px-3 py-1 bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 rounded-full font-mono">Strategy</span>
+							<span class="px-3 py-1 bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 rounded-full font-mono">Data Analytics</span>
+							<span class="px-3 py-1 bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 rounded-full font-mono">Luxury Hospitality</span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Nourish Engine -->
+				<div class="group relative grid grid-cols-1 md:grid-cols-12 gap-8 items-center border border-zinc-800 rounded-2xl p-8 hover:border-zinc-700 transition-colors">
+					<div class="md:col-span-8">
+						<h3 class="text-2xl font-semibold mb-3">Nourish Engine</h3>
+						<p class="text-zinc-400 mb-6">An upcoming nutrition web application forming the foundation of a broader health & performance portfolio. Full-stack deployment on self-hosted VPS infrastructure.</p>
+						<div class="flex flex-wrap gap-3">
+							<span class="px-3 py-1 bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 rounded-full font-mono">Astro</span>
+							<span class="px-3 py-1 bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 rounded-full font-mono">Docker</span>
+							<span class="px-3 py-1 bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 rounded-full font-mono">Caddy</span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- Writing / Thinking -->
+		<section class="mb-32">
+			<h2 class="text-3xl md:text-4xl font-medium mb-12 flex items-center">
+				<span class="text-[#c6a353] mr-4 text-2xl">03</span> How I Think
+			</h2>
+			<div class="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-8 md:p-12">
+				<blockquote class="font-serif text-xl md:text-2xl italic text-zinc-300 leading-relaxed mb-6">
+					"I prefer problems that keep other people awake. Over the last 15 years that has meant coaxing profit out of Michelin kitchens, salvaging hotel bookings during lockdowns, scaling car-dealer revenue eleven-fold, and lately wiring LLMs into businesses that still file invoices on paper."
+				</blockquote>
+				<p class="text-zinc-500 font-sans">
+					I am endlessly curious about reality—from fundamental questions of truth and consciousness to the elegance of bridge engineering. If it exists in the universe, I want to understand how and why. I read changelogs so clients don't have to.
+				</p>
+			</div>
+		</section>
+
+		<!-- Contact -->
+		<footer class="border-t border-zinc-800 pt-16 mt-32 flex flex-col md:flex-row justify-between items-start md:items-center">
+			<div class="mb-8 md:mb-0">
+				<h2 class="text-2xl font-serif italic text-white mb-2">Let's build something.</h2>
+				<p class="text-zinc-500">London / Yorkshire, UK</p>
+			</div>
+			<div class="flex flex-col items-end gap-2">
+				<a href="mailto:jordanalexanderpitts@gmail.com" class="text-lg text-zinc-300 hover:text-white transition-colors border-b border-transparent hover:border-[#c6a353]">
+					jordanalexanderpitts@gmail.com
+				</a>
+				<a href="https://linkedin.com/in/interjord" target="_blank" rel="noopener noreferrer" class="text-sm text-zinc-500 hover:text-zinc-300 transition-colors">
+					LinkedIn ↗
+				</a>
+			</div>
+		</footer>
+
+	</main>
 </Layout>
