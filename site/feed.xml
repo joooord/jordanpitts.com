@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>jordanpitts.com — iterations</title>
+    <link>https://jordanpitts.com/</link>
+    <description>An evolving website, regenerated weekly by Claude. Archived in full.</description>
+    <language>en</language>
+    <atom:link href="https://jordanpitts.com/feed.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>v0: Eight true things hiding in plain sight, revealed one at a time, ending by turning the visitor&apos;s attention back onto their own surroundings — curiosity as posture, not topic.</title>
+      <link>https://jordanpitts.com/archive/2026-05-19/</link>
+      <guid isPermaLink="true">https://jordanpitts.com/archive/2026-05-19/</guid>
+      <pubDate>Tue, 19 May 2026 06:00:00 GMT</pubDate>
+      <description>A quiet dark self-contained page (~18 KB, no dependencies) — a drifting starfield, a keyboard-navigable &quot;look closer&quot; reveal, a reduced-motion path, a no-JS fallback list, and a &quot;see all eight at once&quot; view. — Repeat — single-idea contemplative pieces, real verified facts, the lean-in reveal. The closing is a passive reflective coda, not a collected question. Shipped by hand in a Cowork session on 2026-06-06 into the v0 / 2026-05-19 slot because the automated Tuesday job had never run (no API keys/secrets set in GitHub — see LAUNCH.md). Also added archive index generation to timeline.ts so the /archive/ link no longer 404s.</description>
+    </item>
+  </channel>
+</rss>

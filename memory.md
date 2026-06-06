@@ -59,3 +59,11 @@ Pre-v0 build-out, all in the harness:
 - **Type-checked CI** — workflow runs `tsc --noEmit` before the Tuesday job.
 - **Tooling** — `tsconfig.json`, `.gitignore`, updated `.env.example`.
 - **Provider-agnostic LLM client** — `scripts/llm.ts`. Tuesday and review now route through a single `callLLM()` that auto-detects provider from the model string (Anthropic, OpenAI, Gemini). Variation across models becomes part of the longitudinal artifact.
+
+## 2026-05-19 — v0
+Brief: Eight true things hiding in plain sight, revealed one at a time, ending by turning the visitor's attention back onto their own surroundings — curiosity as posture, not topic.
+Built: A quiet dark self-contained page (~18 KB, no dependencies) — a drifting starfield, a keyboard-navigable "look closer" reveal, a reduced-motion path, a no-JS fallback list, and a "see all eight at once" view.
+Notes: Repeat — single-idea contemplative pieces, real verified facts, the lean-in reveal. The closing is a passive reflective coda, not a collected question. Shipped by hand in a Cowork session on 2026-06-06 into the v0 / 2026-05-19 slot because the automated Tuesday job had never run (no API keys/secrets set in GitHub — see LAUNCH.md). Also added archive index generation to timeline.ts so the /archive/ link no longer 404s.
+Directive applied: 2026-05-19.md
+Model: claude-opus-4 (hand-run in Cowork, not the automated Tuesday job)
+Visitor question: no
