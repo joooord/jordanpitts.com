@@ -62,8 +62,8 @@ Pre-v0 build-out, all in the harness:
 
 ## 2026-05-19 — v0
 Brief: Eight true things hiding in plain sight, revealed one at a time, ending by turning the visitor's attention back onto their own surroundings — curiosity as posture, not topic.
-Built: A quiet dark self-contained page (~18 KB, no dependencies) — a drifting starfield, a keyboard-navigable "look closer" reveal, a reduced-motion path, a no-JS fallback list, and a "see all eight at once" view.
-Notes: Repeat — single-idea contemplative pieces, real verified facts, the lean-in reveal. The closing is a passive reflective coda, not a collected question. Shipped by hand in a Cowork session on 2026-06-06 into the v0 / 2026-05-19 slot because the automated Tuesday job had never run (no API keys/secrets set in GitHub — see LAUNCH.md). Also added archive index generation to timeline.ts so the /archive/ link no longer 404s.
+Built: A self-contained interactive page (~22 KB, no dependencies). It opens on a bold hero — "Your eyes are lying to you" — with a live, slider-assisted blind-spot demo that makes a dot vanish from the visitor's own vision, then reveals eight verified noticings one at a time; drifting starfield, reduced-motion path, no-JS/screen-reader fallback (noticings live in the DOM as the source of truth), and a "see all eight at once" view.
+Notes: Repeat — verified-fact micro-essays, the lean-in reveal, and an opener that does something to the visitor rather than asking politely. Built by hand in a Cowork session on 2026-06-06 into the v0 / 2026-05-19 slot; the automated Tuesday job had never run (no secrets set — see LAUNCH.md). Opening was reworked once on Jordan's feedback into the interactive blind-spot hero (blind spot promoted from a card to the hero; "more trees than stars" added to keep eight). Also taught timeline.ts to emit /archive/index.html.
 Directive applied: 2026-05-19.md
 Model: claude-opus-4 (hand-run in Cowork, not the automated Tuesday job)
 Visitor question: no

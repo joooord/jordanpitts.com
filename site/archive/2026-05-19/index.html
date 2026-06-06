@@ -3,18 +3,18 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>How much of the world have you actually looked at? — jordanpitts.com</title>
-  <meta name="description" content="Eight true things, hiding in plain sight. The first iteration of jordanpitts.com — an evolving website, regenerated weekly, archived in full." />
+  <title>Your eyes are lying to you — jordanpitts.com</title>
+  <meta name="description" content="An interactive experiment: watch a dot vanish into your own blind spot, then meet eight more true things hiding in plain sight. v0 of jordanpitts.com — a website that rewrites itself every Tuesday." />
   <link rel="canonical" href="https://jordanpitts.com/" />
-  <meta property="og:title" content="How much of the world have you actually looked at?" />
-  <meta property="og:description" content="Eight true things, hiding in plain sight. v0 of jordanpitts.com — an evolving website, regenerated weekly, archived in full." />
+  <meta property="og:title" content="Your eyes are lying to you" />
+  <meta property="og:description" content="Watch a dot vanish into your own blind spot, then eight more true things hiding in plain sight. v0 of jordanpitts.com — an evolving website, regenerated weekly, archived in full." />
   <meta property="og:image" content="/_/og-default.svg" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://jordanpitts.com/" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:image" content="/_/og-default.svg" />
-  <meta name="twitter:title" content="How much of the world have you actually looked at?" />
-  <meta name="twitter:description" content="Eight true things, hiding in plain sight. v0 of jordanpitts.com." />
+  <meta name="twitter:title" content="Your eyes are lying to you" />
+  <meta name="twitter:description" content="Watch a dot vanish into your own blind spot — then eight more true things hiding in plain sight. v0 of jordanpitts.com." />
   <link rel="alternate" type="application/rss+xml" title="jordanpitts.com — iterations" href="/feed.xml" />
   <script src="/_/consent.js" defer></script>
   <style>
@@ -40,95 +40,91 @@
       text-rendering: optimizeLegibility;
       overflow-x: hidden;
     }
-    /* drifting field behind everything */
     #field {
-      position: fixed; inset: 0;
-      width: 100%; height: 100%;
-      z-index: -1;
-      pointer-events: none;
+      position: fixed; inset: 0; width: 100%; height: 100%;
+      z-index: -1; pointer-events: none;
       background:
-        radial-gradient(1200px 800px at 50% 18%, #15152a 0%, rgba(11,11,18,0) 60%),
-        radial-gradient(900px 900px at 80% 90%, #121226 0%, rgba(11,11,18,0) 55%);
+        radial-gradient(1200px 800px at 50% 12%, #15152a 0%, rgba(11,11,18,0) 60%),
+        radial-gradient(900px 900px at 82% 92%, #121226 0%, rgba(11,11,18,0) 55%);
     }
     a { color: var(--link); }
-    a:focus-visible, button:focus-visible, summary:focus-visible {
-      outline: 2px solid var(--link);
-      outline-offset: 3px;
-      border-radius: 3px;
+    a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visible {
+      outline: 2px solid var(--link); outline-offset: 3px; border-radius: 3px;
     }
     .skip {
-      position: absolute; left: -9999px; top: 0;
-      background: var(--ink); color: #000; padding: .6rem 1rem; border-radius: 0 0 8px 0; z-index: 10;
-      font-family: system-ui, sans-serif; font-size: .9rem;
+      position: absolute; left: -9999px; top: 0; background: var(--ink); color: #000;
+      padding: .6rem 1rem; border-radius: 0 0 8px 0; z-index: 10; font-family: system-ui, sans-serif; font-size: .9rem;
     }
     .skip:focus { left: 0; }
 
-    /* fixed header: identity + version/date + archive + timeline (always visible) */
     header.bar {
       position: fixed; top: 0; left: 0; right: 0;
       display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
-      padding: .85rem 1.1rem;
-      font-family: system-ui, -apple-system, sans-serif;
-      font-size: .8rem; letter-spacing: .01em;
-      color: var(--muted);
-      background: linear-gradient(180deg, rgba(11,11,18,0.92), rgba(11,11,18,0));
-      z-index: 5;
+      padding: .85rem 1.1rem; font-family: system-ui, -apple-system, sans-serif;
+      font-size: .8rem; letter-spacing: .01em; color: var(--muted);
+      background: linear-gradient(180deg, rgba(11,11,18,0.92), rgba(11,11,18,0)); z-index: 5;
     }
     header.bar .id { color: var(--ink); text-decoration: none; }
     header.bar .meta { color: var(--dim); }
     header.bar nav a { color: var(--link); text-decoration: none; margin-left: 1rem; border-bottom: 1px dotted currentColor; }
     header.bar nav a:hover { color: #fff; }
 
-    main {
-      min-height: 100%;
-      display: grid;
-      place-items: center;
-      padding: 5.5rem 1.25rem 7rem;
-    }
-    .stage { max-width: 40rem; width: 100%; text-align: center; }
+    main { min-height: 100%; display: grid; place-items: center; padding: 5.5rem 1.25rem 7rem; }
+    .stage { max-width: 42rem; width: 100%; text-align: center; }
 
-    /* progress */
     .progress { height: 2.2rem; display: flex; flex-direction: column; align-items: center; gap: .5rem; margin-bottom: 1.5rem; }
     .progress[hidden] { display: none; }
     .progress .count { font-family: system-ui, sans-serif; font-size: .75rem; letter-spacing: .22em; color: var(--dim); }
     .progress .track { width: 8rem; height: 1px; background: var(--rule); position: relative; }
     .progress .fill { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--accent); transition: width .5s ease; }
 
-    /* the slides */
-    .slide { display: none; animation: rise .7s ease both; }
-    .slide.on { display: block; }
+    .slide { display: block; animation: rise .7s ease both; }
     @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
-    .lead { font-size: clamp(1.05rem, 1rem + .8vw, 1.35rem); color: var(--accent); margin: 0 0 1rem; font-style: italic; }
-    .body { font-size: clamp(1.25rem, 1.1rem + 1.6vw, 1.9rem); margin: 0 auto; max-width: 32rem; }
+    /* hero */
+    .kicker { font-family: system-ui, sans-serif; font-size: .78rem; letter-spacing: .26em; text-transform: uppercase; color: var(--dim); margin: 0 0 1.3rem; }
+    .hero h1 { font-weight: 400; font-size: clamp(2.6rem, 1.5rem + 7vw, 5.2rem); line-height: 1.02; letter-spacing: -0.02em; margin: 0 0 1.1rem; }
+    .hero .sub { color: var(--muted); font-size: clamp(1.05rem, 1rem + .6vw, 1.3rem); margin: 0 auto 2.3rem; max-width: 28rem; }
 
-    .open h1 { font-weight: 400; font-size: clamp(1.9rem, 1.4rem + 3.2vw, 3.1rem); line-height: 1.18; margin: 0 0 1.1rem; }
-    .open p { color: var(--muted); font-size: 1.1rem; margin: 0 auto 2.4rem; max-width: 30rem; }
+    .bs { max-width: 40rem; margin: 0 auto; }
+    .bs-stage {
+      position: relative; height: 170px; border: 1px solid var(--rule); border-radius: 14px;
+      background: radial-gradient(120% 140% at 50% 50%, #0c0c16 0%, #050509 100%); overflow: hidden;
+    }
+    .bs-plus { position: absolute; left: 9%; top: 50%; transform: translate(-50%, -50%); font: 700 34px/1 system-ui, sans-serif; color: #fff; }
+    .bs-dot { position: absolute; left: 64%; top: 50%; transform: translate(-50%, -50%); width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 0 rgba(255,255,255,.0); }
+    .bs-instructions { color: var(--muted); font-family: system-ui, sans-serif; font-size: 1rem; margin: 1.3rem auto 0; max-width: 31rem; }
+    .bs-instructions strong { color: var(--ink); font-weight: 600; }
+    .bs-slider { display: flex; gap: .7rem; align-items: center; justify-content: center; margin: 1.1rem 0 0; font-family: system-ui, sans-serif; font-size: .8rem; color: var(--dim); flex-wrap: wrap; }
+    .bs-slider input[type="range"] { width: 200px; max-width: 60vw; accent-color: var(--accent); cursor: pointer; }
+    .bs-payoff { color: var(--dim); font-family: system-ui, sans-serif; font-size: .95rem; max-width: 32rem; margin: 1.5rem auto 0; line-height: 1.6; }
+    .bs-payoff strong { color: var(--muted); font-weight: 600; }
+
+    /* noticing slide */
+    .lead { font-size: clamp(1.05rem, 1rem + .8vw, 1.4rem); color: var(--accent); margin: 0 0 1rem; font-style: italic; }
+    .body { font-size: clamp(1.25rem, 1.1rem + 1.6vw, 1.95rem); margin: 0 auto; max-width: 32rem; }
 
     .close h2 { font-weight: 400; font-size: clamp(1.8rem, 1.4rem + 2.6vw, 2.8rem); margin: 0 0 1.2rem; }
     .close p { color: var(--muted); font-size: 1.12rem; max-width: 32rem; margin: 0 auto 1.2rem; }
     .close .small { color: var(--dim); font-size: .98rem; }
 
-    /* controls */
     .controls { margin-top: 2.6rem; display: flex; gap: .9rem; justify-content: center; align-items: center; flex-wrap: wrap; }
-    button.btn {
-      font: inherit; cursor: pointer;
-      background: var(--ink); color: #0b0b12;
-      border: 0; border-radius: 999px; padding: .7rem 1.4rem;
+    .btn {
+      font: inherit; cursor: pointer; display: inline-block; text-decoration: none;
+      background: var(--ink); color: #0b0b12; border: 0; border-radius: 999px; padding: .72rem 1.5rem;
       font-family: system-ui, sans-serif; font-size: .98rem; font-weight: 600;
     }
-    button.btn:hover { background: #fff; }
-    button.ghost { background: transparent; color: var(--muted); border: 1px solid var(--rule); font-weight: 400; }
-    button.ghost:hover { color: var(--ink); border-color: var(--dim); }
-    button.ghost[hidden] { display: none; }
-    .hint { font-family: system-ui, sans-serif; font-size: .76rem; color: var(--dim); margin-top: 1.4rem; }
+    .btn:hover { background: #fff; }
+    .btn.ghost { background: transparent; color: var(--muted); border: 1px solid var(--rule); font-weight: 400; }
+    .btn.ghost:hover { color: var(--ink); border-color: var(--dim); }
+    .btn.ghost[hidden] { display: none; }
+    .hint { font-family: system-ui, sans-serif; font-size: .8rem; color: var(--dim); margin-top: 1.4rem; }
+    .hint .kbd-hint { opacity: .8; }
 
     footer.foot {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      text-align: center; padding: .8rem 1rem 1rem;
+      position: fixed; bottom: 0; left: 0; right: 0; text-align: center; padding: .8rem 1rem 1rem;
       font-family: system-ui, sans-serif; font-size: .78rem; color: var(--dim);
-      background: linear-gradient(0deg, rgba(11,11,18,0.92), rgba(11,11,18,0));
-      z-index: 5;
+      background: linear-gradient(0deg, rgba(11,11,18,0.92), rgba(11,11,18,0)); z-index: 5;
     }
     footer.foot details { display: inline-block; }
     footer.foot summary { cursor: pointer; color: var(--muted); list-style: none; }
@@ -137,13 +133,14 @@
     footer.foot a { color: var(--link); }
     footer.foot .all-toggle { background: none; border: 0; color: var(--link); font: inherit; cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
 
-    /* "see all" static list */
-    #all { display: none; max-width: 40rem; margin: 0 auto; text-align: left; }
-    #all.on { display: block; }
-    #all .item { padding: 1.5rem 0; border-top: 1px solid var(--rule); }
-    #all .item:first-child { border-top: 0; }
-    #all .item .lead { text-align: left; }
-    #all .item .body { font-size: 1.2rem; text-align: left; }
+    /* #source: data + no-JS fallback + "see all" view */
+    .source { max-width: 40rem; margin: 2.5rem auto 0; text-align: left; }
+    .source-title { font-weight: 400; font-size: 1.4rem; color: var(--muted); margin: 0 0 1rem; }
+    .source .noticing { padding: 1.4rem 0; border-top: 1px solid var(--rule); }
+    .source .noticing .lead { text-align: left; }
+    .source .noticing .body { font-size: 1.2rem; text-align: left; }
+    .source .closing { padding: 1.8rem 0 0; border-top: 1px solid var(--rule); margin-top: .5rem; }
+    .source .closing h2 { font-weight: 400; }
 
     @media (prefers-reduced-motion: reduce) {
       .slide { animation: none; }
@@ -153,7 +150,7 @@
 </head>
 <body>
   <canvas id="field" aria-hidden="true"></canvas>
-  <a class="skip" href="#stage">Skip to content</a>
+  <a class="skip" href="#noticings">Skip to the eight things</a>
 
   <header class="bar">
     <span><a class="id" href="/">jordanpitts.com</a> <span class="meta">· v0 · 2026-05-19</span></span>
@@ -161,30 +158,88 @@
   </header>
 
   <main>
-    <div class="stage" id="stage">
+    <div class="stage">
 
       <div class="progress" id="progress" hidden>
         <span class="count" id="count" aria-hidden="true">01 / 08</span>
         <span class="track"><span class="fill" id="fill"></span></span>
       </div>
 
-      <!-- Sequential view (JS-driven). aria-live announces each step. -->
+      <!-- #seq starts as the HERO. JS caches this, then drives the sequence through it. -->
       <div id="seq" aria-live="polite">
-        <section class="slide open on" data-slide="open">
-          <h1>How much of the world have you actually&nbsp;looked&nbsp;at?</h1>
-          <p>Not glanced at. Looked at. Here are eight true things, hiding in plain&nbsp;sight.</p>
+        <section class="slide hero">
+          <p class="kicker">An experiment in paying attention</p>
+          <h1>Your eyes are<br>lying to you.</h1>
+          <p class="sub">Right now, as you read this. Here is how to catch them.</p>
+
+          <div class="bs">
+            <div class="bs-stage" id="bsStage">
+              <span class="bs-plus" aria-hidden="true">+</span>
+              <span class="bs-dot" id="bsDot" aria-hidden="true"></span>
+            </div>
+            <p class="bs-instructions">
+              Cover your <strong>left eye</strong>. Stare straight at the <strong>+</strong>, and don't look away.
+              Now lean slowly toward the screen — and watch the dot on the right blink clean out of existence.
+            </p>
+            <label class="bs-slider">
+              <span>Won't vanish? Nudge the dot &rarr;</span>
+              <input type="range" id="bsRange" min="0" max="100" value="45" aria-label="Move the dot horizontally to find your blind spot" />
+            </label>
+            <p class="bs-payoff">
+              When it goes, it hasn't moved. It has dropped into your <strong>blind spot</strong> — the gap where the optic nerve leaves your eye, a patch of retina with no light receptors at all. Your brain paints over that hole every waking second so smoothly you forget to ask what else it's quietly editing out. Quite a lot, it turns out.
+            </p>
+          </div>
         </section>
       </div>
 
       <div class="controls" id="controls">
-        <button class="btn ghost" id="prev" type="button" hidden>← Back</button>
-        <button class="btn" id="next" type="button">Show me one →</button>
+        <button class="btn ghost" id="prev" type="button" hidden>&larr; Back</button>
+        <a class="btn" id="next" href="#noticings">Show me what else &rarr;</a>
       </div>
-      <p class="hint" id="hint">Press <kbd>Space</kbd> or <kbd>→</kbd> to look closer.</p>
+      <p class="hint" id="hint">Eight true things hiding in plain sight. <span class="kbd-hint">Press <kbd>&rarr;</kbd> to continue.</span></p>
 
-      <!-- Static "see all" view, also the no-JS / accessible fallback content. -->
-      <div id="all">
-        <noscript><p style="color:var(--muted);text-align:center;margin-bottom:1.5rem;">Eight true things, hiding in plain sight:</p></noscript>
+      <!-- Source of truth for the noticings + closing. Visible without JS; hidden once JS takes over. -->
+      <div id="source" class="source">
+        <h2 id="noticings" class="source-title">Eight true things hiding in plain sight</h2>
+
+        <div class="noticing">
+          <p class="lead">That shuffle has almost certainly never happened before.</p>
+          <p class="body">Shuffle a deck of cards properly and you create an order that has likely never existed in the history of the world, and never will again. The possible arrangements outnumber the seconds since the Big Bang.</p>
+        </div>
+        <div class="noticing">
+          <p class="lead">There are more trees than stars.</p>
+          <p class="body">Earth carries roughly three trillion trees. Our entire galaxy holds only a few hundred billion stars. You live on the one object in the night sky that is winning that contest.</p>
+        </div>
+        <div class="noticing">
+          <p class="lead">And the sharks are older than the trees.</p>
+          <p class="body">Sharks have patrolled the oceans for around 450 million years, tens of millions of years before the first tree grew. When the earliest sharks appeared, nothing on land stood taller than a few centimetres of moss.</p>
+        </div>
+        <div class="noticing">
+          <p class="lead">The Moon is leaving.</p>
+          <p class="body">It drifts about 3.8 centimetres farther away each year, roughly the speed your fingernails grow. Slowly, across millions of years, it is carrying our total eclipses off with it.</p>
+        </div>
+        <div class="noticing">
+          <p class="lead">Yesterday was shorter than tomorrow.</p>
+          <p class="body">Earth's spin is slowing by about two milliseconds a century. The dinosaurs lived on a faster planet, where a single day lasted barely twenty-three and a half hours.</p>
+        </div>
+        <div class="noticing">
+          <p class="lead">Saturn would float.</p>
+          <p class="body">It is the only planet less dense than water. Find a bathtub large enough and the whole ringed giant would bob at the surface like a cork.</p>
+        </div>
+        <div class="noticing">
+          <p class="lead">An octopus has three hearts, and stalls one to swim.</p>
+          <p class="body">Two hearts feed its gills; a third drives the body. That third heart stops whenever the octopus swims, which tires it out, which is part of why it would simply rather walk.</p>
+        </div>
+        <div class="noticing">
+          <p class="lead">Honey does not spoil.</p>
+          <p class="body">Sealed jars of it, thousands of years old, have been lifted from Egyptian tombs still perfectly good to eat. Almost nothing else we make lasts like that.</p>
+        </div>
+
+        <div class="closing">
+          <h2>Your turn.</h2>
+          <p>Somewhere within arm's reach is something you have looked at a thousand times and never once seen. The grain of a desk. The back of your own hand. Find it. Give it ten unhurried seconds.</p>
+          <p class="small">That was the whole site. It will be something else entirely next Tuesday.</p>
+        </div>
       </div>
     </div>
   </main>
@@ -203,31 +258,6 @@
   (function () {
     'use strict';
 
-    var NOTICINGS = [
-      { lead: "There is a hole in your sight, right now.",
-        body: "Each eye has a blind spot where the optic nerve leaves the retina. You never notice it, because your brain quietly paints in whatever ought to be there. You are, very slightly, always making it up." },
-      { lead: "That shuffle has almost certainly never happened before.",
-        body: "Shuffle a deck of cards properly and you create an order that has likely never existed in the history of the world, and never will again. The possible arrangements outnumber the seconds since the Big Bang." },
-      { lead: "The Moon is leaving.",
-        body: "It drifts about 3.8 centimetres farther away each year, roughly the speed your fingernails grow. Slowly, across millions of years, it is carrying our total eclipses off with it." },
-      { lead: "Sharks are older than trees.",
-        body: "They have patrolled the oceans for around 450 million years, tens of millions of years before the first tree grew. When the earliest sharks appeared, nothing on land stood taller than a few centimetres of moss." },
-      { lead: "Yesterday was shorter than tomorrow.",
-        body: "Earth's spin is slowing by about two milliseconds a century. The dinosaurs lived on a faster planet, where a single day lasted barely twenty-three and a half hours." },
-      { lead: "Saturn would float.",
-        body: "It is the only planet less dense than water. Find a bathtub large enough and the whole ringed giant would bob at the surface like a cork." },
-      { lead: "An octopus has three hearts, and stalls one to swim.",
-        body: "Two hearts feed its gills; a third drives the body. That third heart stops whenever the octopus swims, which tires it out, which is part of why it would simply rather walk." },
-      { lead: "Honey does not spoil.",
-        body: "Sealed jars of it, thousands of years old, have been lifted from Egyptian tombs still perfectly good to eat. Almost nothing else we make lasts like that." }
-    ];
-
-    var CLOSE = {
-      h: "Your turn.",
-      p: "Somewhere within arm's reach is something you have looked at a thousand times and never once seen. The grain of a desk. The back of your own hand. Find it. Give it ten unhurried seconds.",
-      small: "That was the whole site. It will be something else entirely next Tuesday."
-    };
-
     var seq = document.getElementById('seq');
     var nextBtn = document.getElementById('next');
     var prevBtn = document.getElementById('prev');
@@ -235,29 +265,49 @@
     var count = document.getElementById('count');
     var fill = document.getElementById('fill');
     var hint = document.getElementById('hint');
-    var allWrap = document.getElementById('all');
+    var controls = document.getElementById('controls');
+    var source = document.getElementById('source');
     var allToggle = document.getElementById('allToggle');
 
-    var TOTAL = NOTICINGS.length;
-    // index: 0 = opening, 1..TOTAL = noticings, TOTAL+1 = closing
-    var i = 0;
-    var MAX = TOTAL + 1;
+    // Hero markup is the initial #seq content. Cache it so we can return to it.
+    var heroHTML = seq.innerHTML;
+
+    // Read the noticings + closing straight from the DOM (single source of truth).
+    var NOTICINGS = [].slice.call(source.querySelectorAll('.noticing')).map(function (el) {
+      return {
+        lead: el.querySelector('.lead').innerHTML,
+        body: el.querySelector('.body').innerHTML
+      };
+    });
+    var closingEl = source.querySelector('.closing');
+    var CLOSE_HTML = closingEl ? closingEl.innerHTML : '<h2>Your turn.</h2>';
+
+    var TOTAL = NOTICINGS.length;       // 8
+    var MAX = TOTAL + 1;                 // closing index
+    var i = 0;                           // 0 = hero, 1..TOTAL = noticings, MAX = closing
 
     function pad(n) { return (n < 10 ? '0' : '') + n; }
-    function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    function wireHero() {
+      var range = document.getElementById('bsRange');
+      var dot = document.getElementById('bsDot');
+      if (!range || !dot) return;
+      var upd = function () { dot.style.left = (38 + (range.value / 100) * 56) + '%'; }; // 38%..94%
+      range.addEventListener('input', upd);
+      upd();
+    }
 
     function render() {
-      var html, slideClass;
       if (i === 0) {
-        html = '<section class="slide open on"><h1>How much of the world have you actually&nbsp;looked&nbsp;at?</h1>' +
-               '<p>Not glanced at. Looked at. Here are eight true things, hiding in plain&nbsp;sight.</p></section>';
+        seq.innerHTML = heroHTML;
+        wireHero();
         progress.hidden = true;
         prevBtn.hidden = true;
-        nextBtn.textContent = 'Show me one →';
+        nextBtn.textContent = 'Show me what else →';
         hint.style.visibility = 'visible';
       } else if (i >= 1 && i <= TOTAL) {
         var n = NOTICINGS[i - 1];
-        html = '<section class="slide on"><p class="lead">' + esc(n.lead) + '</p><p class="body">' + esc(n.body) + '</p></section>';
+        seq.innerHTML = '<section class="slide"><p class="lead">' + n.lead + '</p><p class="body">' + n.body + '</p></section>';
         progress.hidden = false;
         count.textContent = pad(i) + ' / ' + pad(TOTAL);
         fill.style.width = (i / TOTAL * 100) + '%';
@@ -265,59 +315,51 @@
         nextBtn.textContent = (i === TOTAL) ? 'One last thing →' : 'Look closer →';
         hint.style.visibility = 'visible';
       } else {
-        html = '<section class="slide close on"><h2>' + esc(CLOSE.h) + '</h2><p>' + esc(CLOSE.p) + '</p>' +
-               '<p class="small">' + esc(CLOSE.small) + '</p></section>';
+        seq.innerHTML = '<section class="slide close">' + CLOSE_HTML + '</section>';
         progress.hidden = true;
         prevBtn.hidden = false;
         nextBtn.textContent = 'Start over';
         hint.style.visibility = 'hidden';
       }
-      seq.innerHTML = html;
     }
 
     function go(dir) {
-      if (allWrap.classList.contains('on')) return; // ignore while "see all" open
-      if (dir > 0) {
-        i = (i >= MAX) ? 0 : i + 1;   // "Start over" wraps to opening
-      } else {
-        i = (i <= 0) ? 0 : i - 1;
-      }
+      if (source.hidden === false && document.body.getAttribute('data-seeall') === '1') return; // ignore during see-all
+      if (dir > 0) { i = (i >= MAX) ? 0 : i + 1; }
+      else { i = (i <= 0) ? 0 : i - 1; }
       render();
+      if (i > 0) { try { nextBtn.focus({ preventScroll: true }); } catch (e) { nextBtn.focus(); } }
     }
 
-    nextBtn.addEventListener('click', function () { go(1); });
-    prevBtn.addEventListener('click', function () { go(-1); });
+    nextBtn.addEventListener('click', function (e) { e.preventDefault(); go(1); });
+    prevBtn.addEventListener('click', function (e) { e.preventDefault(); go(-1); });
 
     document.addEventListener('keydown', function (e) {
-      if (e.target && /^(INPUT|TEXTAREA|SUMMARY)$/.test(e.target.tagName)) return;
+      var t = e.target;
+      if (t && /^(INPUT|TEXTAREA|SUMMARY)$/.test(t.tagName)) return;
       if (e.key === 'ArrowRight') { e.preventDefault(); go(1); }
       else if (e.key === 'ArrowLeft') { e.preventDefault(); go(-1); }
-      else if (e.key === ' ' && e.target === document.body) { e.preventDefault(); go(1); }
+      else if ((e.key === ' ' || e.key === 'Spacebar') && t === document.body) { e.preventDefault(); go(1); }
     });
 
-    // Build the static "see all" list (also useful for AT and curiosity).
-    (function buildAll() {
-      var frag = document.createDocumentFragment();
-      for (var k = 0; k < NOTICINGS.length; k++) {
-        var d = document.createElement('div');
-        d.className = 'item';
-        d.innerHTML = '<p class="lead">' + esc(NOTICINGS[k].lead) + '</p><p class="body">' + esc(NOTICINGS[k].body) + '</p>';
-        frag.appendChild(d);
-      }
-      allWrap.appendChild(frag);
-    })();
-
+    // "See all" — reveal the source list, hide the sequence UI.
     allToggle.addEventListener('click', function () {
-      var open = allWrap.classList.toggle('on');
+      var open = source.hidden;          // currently hidden -> we are opening
+      source.hidden = !open;
+      document.body.setAttribute('data-seeall', open ? '1' : '0');
       allToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
       allToggle.textContent = open ? 'back to one at a time' : 'see all eight at once';
       seq.style.display = open ? 'none' : '';
-      document.getElementById('controls').style.display = open ? 'none' : '';
+      controls.style.display = open ? 'none' : '';
       hint.style.display = open ? 'none' : '';
       progress.style.display = open ? 'none' : '';
+      if (open && source.scrollIntoView) { source.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
     });
 
-    render();
+    // JS takes over: hide the static source, run the hero.
+    source.hidden = true;
+    document.body.setAttribute('data-seeall', '0');
+    wireHero();
 
     /* ---- drifting field (atmosphere only; paused under reduced-motion) ---- */
     var canvas = document.getElementById('field');
@@ -333,11 +375,9 @@
       }
       function seed() {
         dots = [];
-        var count = Math.min(130, Math.floor((W * H) / 14000));
-        for (var j = 0; j < count; j++) {
-          dots.push({ x: Math.random() * W, y: Math.random() * H,
-            r: Math.random() * 1.3 + 0.3, a: Math.random() * 0.4 + 0.08,
-            v: Math.random() * 0.18 + 0.04 });
+        var c = Math.min(130, Math.floor((W * H) / 14000));
+        for (var j = 0; j < c; j++) {
+          dots.push({ x: Math.random() * W, y: Math.random() * H, r: Math.random() * 1.3 + 0.3, a: Math.random() * 0.4 + 0.08, v: Math.random() * 0.18 + 0.04 });
         }
       }
       function draw() {
@@ -346,21 +386,19 @@
           var d = dots[j];
           d.y -= d.v;
           if (d.y < -2) { d.y = H + 2; d.x = Math.random() * W; }
-          ctx.globalAlpha = d.a;
-          ctx.fillStyle = '#cdd6ff';
+          ctx.globalAlpha = d.a; ctx.fillStyle = '#cdd6ff';
           ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2); ctx.fill();
         }
-        ctx.globalAlpha = 1;
-        raf = requestAnimationFrame(draw);
+        ctx.globalAlpha = 1; raf = requestAnimationFrame(draw);
       }
-      function start() { if (!raf) draw(); }
-      function stop() { if (raf) { cancelAnimationFrame(raf); raf = null; } }
+      function startA() { if (!raf) draw(); }
+      function stopA() { if (raf) { cancelAnimationFrame(raf); raf = null; } }
       try {
         resize(); seed();
-        if (prefersReduced) { draw(); stop(); }   // single static frame
+        if (prefersReduced) { draw(); stopA(); }
         else {
-          start();
-          document.addEventListener('visibilitychange', function () { document.hidden ? stop() : start(); });
+          startA();
+          document.addEventListener('visibilitychange', function () { document.hidden ? stopA() : startA(); });
           var rt;
           window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(function () { resize(); seed(); }, 200); });
         }
