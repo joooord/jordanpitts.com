@@ -20,19 +20,24 @@
   <style>
     :root {
       color-scheme: dark;
-      --bg: #0b0b12;
-      --ink: #f3f3f8;
-      --muted: #b9b9c6;
-      --dim: #8e8e9e;
-      --link: #9bd1ff;
-      --rule: #26263a;
-      --accent: #d9c08a;
+      --bg: #08080d;
+      --ink: #f4f4f7;
+      --muted: #adadba;
+      --dim: #76767f;
+      --faint: #4a4a54;
+      --link: #cdb78d;          /* the single accent: a quiet warm gold */
+      --rule: #1d1d28;
+      --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
     }
     * { box-sizing: border-box; }
     html, body { height: 100%; }
     body {
       margin: 0;
-      background: var(--bg);
+      background:
+        radial-gradient(1100px 760px at 50% 6%, #111120 0%, rgba(8,8,13,0) 62%),
+        radial-gradient(820px 820px at 84% 96%, #0d0d18 0%, rgba(8,8,13,0) 58%),
+        var(--bg);
+      background-attachment: fixed;
       color: var(--ink);
       font-family: Georgia, 'Times New Roman', serif;
       line-height: 1.6;
@@ -40,103 +45,112 @@
       text-rendering: optimizeLegibility;
       overflow-x: hidden;
     }
-    #field {
-      position: fixed; inset: 0; width: 100%; height: 100%;
-      z-index: -1; pointer-events: none;
-      background:
-        radial-gradient(1200px 800px at 50% 12%, #15152a 0%, rgba(11,11,18,0) 60%),
-        radial-gradient(900px 900px at 82% 92%, #121226 0%, rgba(11,11,18,0) 55%);
-    }
     a { color: var(--link); }
     a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visible {
-      outline: 2px solid var(--link); outline-offset: 3px; border-radius: 3px;
+      outline: 1.5px solid var(--link); outline-offset: 4px; border-radius: 2px;
     }
+    .ui { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; }
+
     .skip {
       position: absolute; left: -9999px; top: 0; background: var(--ink); color: #000;
-      padding: .6rem 1rem; border-radius: 0 0 8px 0; z-index: 10; font-family: system-ui, sans-serif; font-size: .9rem;
+      padding: .6rem 1rem; border-radius: 0 0 8px 0; z-index: 10; font: 500 .9rem -apple-system, system-ui, sans-serif;
     }
     .skip:focus { left: 0; }
 
     header.bar {
       position: fixed; top: 0; left: 0; right: 0;
       display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
-      padding: .85rem 1.1rem; font-family: system-ui, -apple-system, sans-serif;
-      font-size: .8rem; letter-spacing: .01em; color: var(--muted);
-      background: linear-gradient(180deg, rgba(11,11,18,0.92), rgba(11,11,18,0)); z-index: 5;
+      padding: 1rem 1.2rem; font-size: .78rem; letter-spacing: .01em; color: var(--dim);
+      background: linear-gradient(180deg, rgba(8,8,13,0.9), rgba(8,8,13,0)); z-index: 5;
     }
-    header.bar .id { color: var(--ink); text-decoration: none; }
-    header.bar .meta { color: var(--dim); }
-    header.bar nav a { color: var(--link); text-decoration: none; margin-left: 1rem; border-bottom: 1px dotted currentColor; }
-    header.bar nav a:hover { color: #fff; }
+    header.bar .id { color: var(--muted); text-decoration: none; }
+    header.bar .meta { color: var(--faint); }
+    header.bar nav a { color: var(--dim); text-decoration: none; margin-left: 1.1rem; transition: color .25s var(--ease); }
+    header.bar nav a:hover { color: var(--ink); }
 
-    main { min-height: 100%; display: grid; place-items: center; padding: 5.5rem 1.25rem 7rem; }
-    .stage { max-width: 42rem; width: 100%; text-align: center; }
+    main { min-height: 100%; display: grid; place-items: center; padding: 6rem 1.5rem 7rem; }
+    .stage { max-width: 40rem; width: 100%; text-align: center; }
 
-    .progress { height: 2.2rem; display: flex; flex-direction: column; align-items: center; gap: .5rem; margin-bottom: 1.5rem; }
+    /* fixed height so nothing jumps between screens */
+    .well { min-height: clamp(360px, 52vh, 500px); display: grid; place-items: center; }
+
+    .progress { height: 2rem; display: flex; flex-direction: column; align-items: center; gap: .55rem; margin-bottom: .5rem; }
     .progress[hidden] { display: none; }
-    .progress .count { font-family: system-ui, sans-serif; font-size: .75rem; letter-spacing: .22em; color: var(--dim); }
-    .progress .track { width: 8rem; height: 1px; background: var(--rule); position: relative; }
-    .progress .fill { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--accent); transition: width .5s ease; }
+    .progress .count { font: .72rem -apple-system, system-ui, sans-serif; letter-spacing: .28em; color: var(--faint); }
+    .progress .track { width: 7rem; height: 1px; background: var(--rule); position: relative; }
+    .progress .fill { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--link); transition: width .6s var(--ease); }
 
-    .slide { display: block; animation: rise .7s ease both; }
-    @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    .slide { animation: rise .6s var(--ease) both; }
+    @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
     /* hero */
-    .kicker { font-family: system-ui, sans-serif; font-size: .78rem; letter-spacing: .26em; text-transform: uppercase; color: var(--dim); margin: 0 0 1.3rem; }
-    .hero h1 { font-weight: 400; font-size: clamp(2.6rem, 1.5rem + 7vw, 5.2rem); line-height: 1.02; letter-spacing: -0.02em; margin: 0 0 1.1rem; }
-    .hero .sub { color: var(--muted); font-size: clamp(1.05rem, 1rem + .6vw, 1.3rem); margin: 0 auto 2.3rem; max-width: 28rem; }
+    .hero h1 { font-weight: 400; font-size: clamp(2.7rem, 1.5rem + 7vw, 5.4rem); line-height: 1.0; letter-spacing: -0.025em; margin: 0; text-wrap: balance; }
+    .hero .sub { color: var(--muted); font-style: italic; font-size: clamp(1.05rem, 1rem + .5vw, 1.35rem); margin: 1.1rem 0 0; }
 
-    .bs { max-width: 40rem; margin: 0 auto; }
-    .bs-stage {
-      position: relative; height: 170px; border: 1px solid var(--rule); border-radius: 14px;
-      background: radial-gradient(120% 140% at 50% 50%, #0c0c16 0%, #050509 100%); overflow: hidden;
+    .lab { position: relative; height: 150px; margin: 2.6rem 0 0; }
+    .lab-plus { position: absolute; left: 11%; top: 50%; transform: translate(-50%, -50%); font: 300 30px/1 -apple-system, system-ui, sans-serif; color: var(--ink); }
+    .lab-dot { position: absolute; left: 60%; top: 50%; transform: translate(-50%, -50%); width: 17px; height: 17px; border-radius: 50%; background: var(--ink); }
+    .lab-do { color: var(--muted); font: .95rem/1.5 -apple-system, system-ui, sans-serif; margin: 1.4rem 0 0; }
+    .lab-do b { color: var(--ink); font-weight: 600; }
+
+    .lab-adjust { display: flex; gap: .7rem; align-items: center; justify-content: center; margin: 1.3rem 0 0; }
+    .lab-adjust-hint { font: .72rem -apple-system, system-ui, sans-serif; letter-spacing: .04em; color: var(--faint); }
+    input[type="range"] {
+      -webkit-appearance: none; appearance: none; width: 150px; max-width: 46vw; height: 16px;
+      background: transparent; cursor: pointer;
     }
-    .bs-plus { position: absolute; left: 9%; top: 50%; transform: translate(-50%, -50%); font: 700 34px/1 system-ui, sans-serif; color: #fff; }
-    .bs-dot { position: absolute; left: 64%; top: 50%; transform: translate(-50%, -50%); width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 0 rgba(255,255,255,.0); }
-    .bs-instructions { color: var(--muted); font-family: system-ui, sans-serif; font-size: 1rem; margin: 1.3rem auto 0; max-width: 31rem; }
-    .bs-instructions strong { color: var(--ink); font-weight: 600; }
-    .bs-slider { display: flex; gap: .7rem; align-items: center; justify-content: center; margin: 1.1rem 0 0; font-family: system-ui, sans-serif; font-size: .8rem; color: var(--dim); flex-wrap: wrap; }
-    .bs-slider input[type="range"] { width: 200px; max-width: 60vw; accent-color: var(--accent); cursor: pointer; }
-    .bs-payoff { color: var(--dim); font-family: system-ui, sans-serif; font-size: .95rem; max-width: 32rem; margin: 1.5rem auto 0; line-height: 1.6; }
-    .bs-payoff strong { color: var(--muted); font-weight: 600; }
+    input[type="range"]::-webkit-slider-runnable-track { height: 1px; background: var(--rule); }
+    input[type="range"]::-moz-range-track { height: 1px; background: var(--rule); }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 11px; height: 11px; margin-top: -5px; border-radius: 50%; background: var(--link); }
+    input[type="range"]::-moz-range-thumb { width: 11px; height: 11px; border: 0; border-radius: 50%; background: var(--link); }
 
-    /* noticing slide */
-    .lead { font-size: clamp(1.05rem, 1rem + .8vw, 1.4rem); color: var(--accent); margin: 0 0 1rem; font-style: italic; }
-    .body { font-size: clamp(1.25rem, 1.1rem + 1.6vw, 1.95rem); margin: 0 auto; max-width: 32rem; }
+    .lab-why {
+      color: var(--dim); font: .92rem/1.65 -apple-system, system-ui, sans-serif;
+      max-width: 30rem; margin: 1.7rem auto 0;
+      opacity: 1; transition: opacity .8s var(--ease);
+    }
+    .js .lab-why { opacity: 0; }            /* hidden once JS runs; revealed on engage */
+    .js .lab-why.show { opacity: 1; }
 
-    .close h2 { font-weight: 400; font-size: clamp(1.8rem, 1.4rem + 2.6vw, 2.8rem); margin: 0 0 1.2rem; }
-    .close p { color: var(--muted); font-size: 1.12rem; max-width: 32rem; margin: 0 auto 1.2rem; }
-    .close .small { color: var(--dim); font-size: .98rem; }
+    /* noticing */
+    .lead { font-size: clamp(1.05rem, 1rem + .7vw, 1.35rem); color: var(--link); margin: 0 0 1.1rem; font-style: italic; }
+    .body { font-size: clamp(1.3rem, 1.1rem + 1.7vw, 2rem); line-height: 1.28; margin: 0 auto; max-width: 30rem; letter-spacing: -0.01em; }
 
-    .controls { margin-top: 2.6rem; display: flex; gap: .9rem; justify-content: center; align-items: center; flex-wrap: wrap; }
+    .close h2 { font-weight: 400; font-size: clamp(1.9rem, 1.4rem + 2.6vw, 2.9rem); margin: 0 0 1.2rem; letter-spacing: -0.02em; }
+    .close p { color: var(--muted); font-size: 1.12rem; max-width: 31rem; margin: 0 auto 1.1rem; }
+    .close .small { color: var(--dim); font-size: .96rem; font-style: italic; }
+
+    .controls { margin-top: 2.4rem; display: flex; gap: 1rem; justify-content: center; align-items: center; }
     .btn {
-      font: inherit; cursor: pointer; display: inline-block; text-decoration: none;
-      background: var(--ink); color: #0b0b12; border: 0; border-radius: 999px; padding: .72rem 1.5rem;
-      font-family: system-ui, sans-serif; font-size: .98rem; font-weight: 600;
+      font: 500 .95rem -apple-system, system-ui, sans-serif; cursor: pointer; display: inline-block; text-decoration: none;
+      background: var(--ink); color: #08080d; border: 0; border-radius: 980px; padding: .7rem 1.5rem;
+      transition: transform .2s var(--ease), background .2s var(--ease), opacity .2s var(--ease);
     }
-    .btn:hover { background: #fff; }
-    .btn.ghost { background: transparent; color: var(--muted); border: 1px solid var(--rule); font-weight: 400; }
-    .btn.ghost:hover { color: var(--ink); border-color: var(--dim); }
+    .btn:hover { background: #fff; transform: translateY(-1px); }
+    .btn.ghost { background: transparent; color: var(--dim); border: 1px solid var(--rule); }
+    .btn.ghost:hover { background: transparent; color: var(--ink); border-color: var(--faint); transform: none; }
     .btn.ghost[hidden] { display: none; }
-    .hint { font-family: system-ui, sans-serif; font-size: .8rem; color: var(--dim); margin-top: 1.4rem; }
-    .hint .kbd-hint { opacity: .8; }
+    .hint { font: .76rem -apple-system, system-ui, sans-serif; color: var(--faint); margin-top: 1.5rem; letter-spacing: .02em; }
+    .hint kbd { font-family: inherit; }
 
     footer.foot {
-      position: fixed; bottom: 0; left: 0; right: 0; text-align: center; padding: .8rem 1rem 1rem;
-      font-family: system-ui, sans-serif; font-size: .78rem; color: var(--dim);
-      background: linear-gradient(0deg, rgba(11,11,18,0.92), rgba(11,11,18,0)); z-index: 5;
+      position: fixed; bottom: 0; left: 0; right: 0; text-align: center; padding: .9rem 1rem 1.05rem;
+      font: .77rem -apple-system, system-ui, sans-serif; color: var(--faint);
+      background: linear-gradient(0deg, rgba(8,8,13,0.92), rgba(8,8,13,0)); z-index: 5;
     }
     footer.foot details { display: inline-block; }
-    footer.foot summary { cursor: pointer; color: var(--muted); list-style: none; }
+    footer.foot summary { cursor: pointer; color: var(--dim); list-style: none; transition: color .25s var(--ease); }
+    footer.foot summary:hover { color: var(--muted); }
     footer.foot summary::-webkit-details-marker { display: none; }
-    footer.foot .reveal { max-width: 34rem; margin: .8rem auto 0; color: var(--dim); line-height: 1.55; }
+    footer.foot .reveal { max-width: 33rem; margin: .9rem auto 0; color: var(--dim); line-height: 1.6; }
     footer.foot a { color: var(--link); }
-    footer.foot .all-toggle { background: none; border: 0; color: var(--link); font: inherit; cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+    footer.foot .all-toggle { background: none; border: 0; color: var(--link); font: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
 
     /* #source: data + no-JS fallback + "see all" view */
-    .source { max-width: 40rem; margin: 2.5rem auto 0; text-align: left; }
-    .source-title { font-weight: 400; font-size: 1.4rem; color: var(--muted); margin: 0 0 1rem; }
-    .source .noticing { padding: 1.4rem 0; border-top: 1px solid var(--rule); }
+    .source { max-width: 38rem; margin: 2.5rem auto 0; text-align: left; }
+    .source-title { font: 1.3rem Georgia, serif; font-weight: 400; color: var(--muted); margin: 0 0 .5rem; }
+    .source .noticing { padding: 1.5rem 0; border-top: 1px solid var(--rule); }
+    .source .noticing:first-of-type { border-top: 0; }
     .source .noticing .lead { text-align: left; }
     .source .noticing .body { font-size: 1.2rem; text-align: left; }
     .source .closing { padding: 1.8rem 0 0; border-top: 1px solid var(--rule); margin-top: .5rem; }
@@ -144,15 +158,15 @@
 
     @media (prefers-reduced-motion: reduce) {
       .slide { animation: none; }
-      .progress .fill { transition: none; }
+      .progress .fill, .lab-why, .btn { transition: none; }
+      .js .lab-why { opacity: 1; }
     }
   </style>
 </head>
 <body>
-  <canvas id="field" aria-hidden="true"></canvas>
-  <a class="skip" href="#noticings">Skip to the eight things</a>
+  <a class="skip ui" href="#noticings">Skip to the eight things</a>
 
-  <header class="bar">
+  <header class="bar ui">
     <span><a class="id" href="/">jordanpitts.com</a> <span class="meta">· v0 · 2026-05-19</span></span>
     <nav aria-label="Site"><a href="/archive/">archive</a><a href="/timeline/">timeline</a></nav>
   </header>
@@ -165,38 +179,32 @@
         <span class="track"><span class="fill" id="fill"></span></span>
       </div>
 
-      <!-- #seq starts as the HERO. JS caches this, then drives the sequence through it. -->
-      <div id="seq" aria-live="polite">
-        <section class="slide hero">
-          <p class="kicker">An experiment in paying attention</p>
-          <h1>Your eyes are<br>lying to you.</h1>
-          <p class="sub">Right now, as you read this. Here is how to catch them.</p>
+      <div class="well">
+        <!-- #seq starts as the HERO. JS caches this and drives the sequence through it. -->
+        <div id="seq" aria-live="polite">
+          <section class="slide hero">
+            <h1>Your eyes are<br>lying to you.</h1>
+            <p class="sub">Right now. Here is the proof.</p>
 
-          <div class="bs">
-            <div class="bs-stage" id="bsStage">
-              <span class="bs-plus" aria-hidden="true">+</span>
-              <span class="bs-dot" id="bsDot" aria-hidden="true"></span>
+            <div class="lab" role="img" aria-label="A plus sign on the left and a small dot to its right, on a dark field — the setup for a blind-spot experiment.">
+              <span class="lab-plus" aria-hidden="true">+</span>
+              <span class="lab-dot" id="bsDot" aria-hidden="true"></span>
             </div>
-            <p class="bs-instructions">
-              Cover your <strong>left eye</strong>. Stare straight at the <strong>+</strong>, and don't look away.
-              Now lean slowly toward the screen — and watch the dot on the right blink clean out of existence.
-            </p>
-            <label class="bs-slider">
-              <span>Won't vanish? Nudge the dot &rarr;</span>
-              <input type="range" id="bsRange" min="0" max="100" value="45" aria-label="Move the dot horizontally to find your blind spot" />
-            </label>
-            <p class="bs-payoff">
-              When it goes, it hasn't moved. It has dropped into your <strong>blind spot</strong> — the gap where the optic nerve leaves your eye, a patch of retina with no light receptors at all. Your brain paints over that hole every waking second so smoothly you forget to ask what else it's quietly editing out. Quite a lot, it turns out.
-            </p>
-          </div>
-        </section>
+            <p class="lab-do ui">Cover your <b>left eye</b>. Stare at the <b>+</b>. Lean slowly in.</p>
+            <div class="lab-adjust ui">
+              <input type="range" id="bsRange" min="0" max="100" value="40" aria-label="Move the dot to find your blind spot" />
+              <span class="lab-adjust-hint">won't vanish? drag</span>
+            </div>
+            <p class="lab-why ui" id="labWhy">The dot never moved. It fell into your blind spot — the gap where the optic nerve leaves the eye, with no light receptors at all. Your brain hides that hole every waking second. Which makes you wonder what else it's hiding.</p>
+          </section>
+        </div>
       </div>
 
       <div class="controls" id="controls">
-        <button class="btn ghost" id="prev" type="button" hidden>&larr; Back</button>
-        <a class="btn" id="next" href="#noticings">Show me what else &rarr;</a>
+        <button class="btn ghost ui" id="prev" type="button" hidden>&larr; Back</button>
+        <a class="btn ui" id="next" href="#noticings">Show me what else &rarr;</a>
       </div>
-      <p class="hint" id="hint">Eight true things hiding in plain sight. <span class="kbd-hint">Press <kbd>&rarr;</kbd> to continue.</span></p>
+      <p class="hint ui" id="hint">Eight true things hiding in plain sight. <kbd>&rarr;</kbd> to continue.</p>
 
       <!-- Source of truth for the noticings + closing. Visible without JS; hidden once JS takes over. -->
       <div id="source" class="source">
@@ -257,6 +265,7 @@
   <script>
   (function () {
     'use strict';
+    document.documentElement.classList.add('js');
 
     var seq = document.getElementById('seq');
     var nextBtn = document.getElementById('next');
@@ -268,33 +277,37 @@
     var controls = document.getElementById('controls');
     var source = document.getElementById('source');
     var allToggle = document.getElementById('allToggle');
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // Hero markup is the initial #seq content. Cache it so we can return to it.
-    var heroHTML = seq.innerHTML;
+    var heroHTML = seq.innerHTML;   // cache the hero so we can return to it
 
-    // Read the noticings + closing straight from the DOM (single source of truth).
     var NOTICINGS = [].slice.call(source.querySelectorAll('.noticing')).map(function (el) {
-      return {
-        lead: el.querySelector('.lead').innerHTML,
-        body: el.querySelector('.body').innerHTML
-      };
+      return { lead: el.querySelector('.lead').innerHTML, body: el.querySelector('.body').innerHTML };
     });
     var closingEl = source.querySelector('.closing');
     var CLOSE_HTML = closingEl ? closingEl.innerHTML : '<h2>Your turn.</h2>';
 
-    var TOTAL = NOTICINGS.length;       // 8
-    var MAX = TOTAL + 1;                 // closing index
-    var i = 0;                           // 0 = hero, 1..TOTAL = noticings, MAX = closing
+    var TOTAL = NOTICINGS.length;   // 8
+    var MAX = TOTAL + 1;            // closing index
+    var i = 0;                      // 0 = hero, 1..TOTAL = noticings, MAX = closing
+    var whyTimer = null;
 
     function pad(n) { return (n < 10 ? '0' : '') + n; }
 
     function wireHero() {
       var range = document.getElementById('bsRange');
       var dot = document.getElementById('bsDot');
+      var why = document.getElementById('labWhy');
+      if (whyTimer) { clearTimeout(whyTimer); whyTimer = null; }
       if (!range || !dot) return;
-      var upd = function () { dot.style.left = (38 + (range.value / 100) * 56) + '%'; }; // 38%..94%
-      range.addEventListener('input', upd);
-      upd();
+      var place = function () { dot.style.left = (38 + (range.value / 100) * 56) + '%'; }; // 38%..94%
+      place();
+      var revealWhy = function () { if (why) why.classList.add('show'); };
+      if (reduce) { revealWhy(); }
+      else {
+        range.addEventListener('input', function () { place(); revealWhy(); });
+        whyTimer = setTimeout(revealWhy, 7000);   // also surfaces for non-interactors
+      }
     }
 
     function render() {
@@ -324,11 +337,10 @@
     }
 
     function go(dir) {
-      if (source.hidden === false && document.body.getAttribute('data-seeall') === '1') return; // ignore during see-all
-      if (dir > 0) { i = (i >= MAX) ? 0 : i + 1; }
-      else { i = (i <= 0) ? 0 : i - 1; }
+      if (source.hidden === false) return;     // ignore while "see all" is open
+      i = dir > 0 ? (i >= MAX ? 0 : i + 1) : (i <= 0 ? 0 : i - 1);
       render();
-      if (i > 0) { try { nextBtn.focus({ preventScroll: true }); } catch (e) { nextBtn.focus(); } }
+      if (i > 0) { try { nextBtn.focus({ preventScroll: true }); } catch (e) {} }
     }
 
     nextBtn.addEventListener('click', function (e) { e.preventDefault(); go(1); });
@@ -342,11 +354,9 @@
       else if ((e.key === ' ' || e.key === 'Spacebar') && t === document.body) { e.preventDefault(); go(1); }
     });
 
-    // "See all" — reveal the source list, hide the sequence UI.
     allToggle.addEventListener('click', function () {
-      var open = source.hidden;          // currently hidden -> we are opening
+      var open = source.hidden;
       source.hidden = !open;
-      document.body.setAttribute('data-seeall', open ? '1' : '0');
       allToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
       allToggle.textContent = open ? 'back to one at a time' : 'see all eight at once';
       seq.style.display = open ? 'none' : '';
@@ -356,54 +366,8 @@
       if (open && source.scrollIntoView) { source.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
     });
 
-    // JS takes over: hide the static source, run the hero.
-    source.hidden = true;
-    document.body.setAttribute('data-seeall', '0');
+    source.hidden = true;   // JS takes over; static list becomes the "see all" view
     wireHero();
-
-    /* ---- drifting field (atmosphere only; paused under reduced-motion) ---- */
-    var canvas = document.getElementById('field');
-    var prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (canvas && canvas.getContext) {
-      var ctx = canvas.getContext('2d');
-      var dots = [], W, H, dpr = Math.min(window.devicePixelRatio || 1, 2), raf = null;
-      function resize() {
-        W = canvas.clientWidth = window.innerWidth;
-        H = canvas.clientHeight = window.innerHeight;
-        canvas.width = Math.floor(W * dpr); canvas.height = Math.floor(H * dpr);
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      }
-      function seed() {
-        dots = [];
-        var c = Math.min(130, Math.floor((W * H) / 14000));
-        for (var j = 0; j < c; j++) {
-          dots.push({ x: Math.random() * W, y: Math.random() * H, r: Math.random() * 1.3 + 0.3, a: Math.random() * 0.4 + 0.08, v: Math.random() * 0.18 + 0.04 });
-        }
-      }
-      function draw() {
-        ctx.clearRect(0, 0, W, H);
-        for (var j = 0; j < dots.length; j++) {
-          var d = dots[j];
-          d.y -= d.v;
-          if (d.y < -2) { d.y = H + 2; d.x = Math.random() * W; }
-          ctx.globalAlpha = d.a; ctx.fillStyle = '#cdd6ff';
-          ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2); ctx.fill();
-        }
-        ctx.globalAlpha = 1; raf = requestAnimationFrame(draw);
-      }
-      function startA() { if (!raf) draw(); }
-      function stopA() { if (raf) { cancelAnimationFrame(raf); raf = null; } }
-      try {
-        resize(); seed();
-        if (prefersReduced) { draw(); stopA(); }
-        else {
-          startA();
-          document.addEventListener('visibilitychange', function () { document.hidden ? stopA() : startA(); });
-          var rt;
-          window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(function () { resize(); seed(); }, 200); });
-        }
-      } catch (err) { /* atmosphere is optional; never let it break the page */ }
-    }
   })();
   </script>
 </body>
