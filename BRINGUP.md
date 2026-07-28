@@ -1,3 +1,9 @@
+> **PARTLY SUPERSEDED — see `PLAN.md` for the current launch sequence.** This
+> guide predates the 2026-07-28 audit. Anything it says about GA4, the consent
+> banner, `_/consent.js`, Supabase, or the `claude-opus-4-7` model ID is out of
+> date: analytics are now cookieless Plausible with no banner, and the default
+> generator is `claude-opus-5`. The general shape of the bring-up still holds.
+
 # Bring-up guide
 
 Step-by-step walkthrough to take this project from a folder on your machine to a live, automated, scheduled website. Allow 60–90 minutes the first time. Order matters — earlier steps unblock later ones.

@@ -1,3 +1,11 @@
+> **SUPERSEDED — see `PLAN.md`.** Kept only as a record of what was believed on
+> 2026-06-06. Its central claim is wrong: this file says the go-live is four
+> configuration steps and that "nothing was broken — it was just never armed."
+> A full audit on 2026-07-28 found five blockers in the code itself, including a
+> validator that would have rejected v0 and a reserved-path check that could be
+> bypassed with a `./` prefix. Setting the secrets in May would not have worked.
+> This file is deleted when Phase 4 of `PLAN.md` completes.
+
 # Launch / go-live checklist
 
 Status as of 2026-06-06: **v0 is built and committed, but the site is not live and the weekly automation has never run.** This file records why, and exactly what only you can do to fix it.

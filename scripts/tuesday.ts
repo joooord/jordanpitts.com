@@ -1,55 +1,47 @@
 // scripts/tuesday.ts
-// The weekly job. Runs every Tuesday via GitHub Actions.
-// Reads the harness, calls Claude, validates, deploys, notifies.
+// The weekly job. Reads the harness, calls the model, validates, deploys, notifies.
+//
+// Ordering rule that must never be broken: every destructive step happens after
+// every gate, and the push happens last. A failure anywhere before
+// pullRebaseAndPush leaves the live site completely untouched.
 
 import { promises as fs } from 'fs'
 import { existsSync } from 'fs'
-import { join, dirname, normalize, resolve } from 'path'
+import { join, dirname } from 'path'
 import { spawnSync } from 'child_process'
 import { generateTimelineAndFeed } from './timeline'
 import { contentReview, ReviewResult } from './review'
 import { runMarketing, MarketingPayload, MarketingResult } from './marketing'
 import { callLLM } from './llm'
+import { assertWritablePath } from './paths'
+import {
+  assertShape,
+  validateIteration,
+  GeneratedIteration,
+  ValidationError,
+} from './validate'
+import {
+  buildMemoryEntry,
+  lastIterationDateOrNull,
+  lastIterationHadQuestion,
+  lastIterationVersionOrMinusOne,
+  takeLastIterationEntries,
+} from './memory'
 
 const ROOT = process.cwd()
 const TODAY = new Date().toISOString().slice(0, 10)
-const DEFAULT_MODEL = process.env.MODEL ?? 'claude-opus-4-7'
+const DEFAULT_MODEL = process.env.MODEL ?? 'claude-opus-5'
 const DRY_RUN = process.env.DRY_RUN === 'true'
+const FORCE = process.env.FORCE === 'true'
 
 const OUTPUT_START = '<<<OUTPUT_START>>>'
 const OUTPUT_END = '<<<OUTPUT_END>>>'
 
-interface GeneratedFile { path: string; content: string }
+/** Names in site/ that the orchestrator owns and an iteration never provides. */
+const ORCHESTRATOR_OWNED = ['archive', '_', 'assets', 'timeline', 'feed.xml', 'sitemap.xml', 'robots.txt']
 
-interface GeneratedMarketing {
-  headline: string
-  postShort: string
-  postMedium: string
-  postLong: string
-  imageAlt: string
-  hashtags: string[]
-}
-
-interface GeneratedVisitorQuestion {
-  prompt: string
-  kind: 'open' | 'choice'
-  options?: string[]
-  placeholder?: string
-  rationale: string
-}
-
-interface GeneratedIteration {
-  version: number
-  brief: string
-  evaluationMetric: string
-  files: GeneratedFile[]
-  memoryEntry: string
-  evaluationEntry: string
-  notes: string
-  marketing: GeneratedMarketing
-  visitorQuestion?: GeneratedVisitorQuestion
-  modelForNextWeek?: string
-}
+/** Excluded from an iteration's archive snapshot — shared infrastructure, not iteration content. */
+const SNAPSHOT_EXCLUDE = ORCHESTRATOR_OWNED
 
 interface Directive {
   path: string
@@ -76,24 +68,53 @@ interface Context {
   model: string
 }
 
+/** Names the stage that failed, so the failure email says something useful. */
+let currentStage = 'startup'
+function stage(name: string) {
+  currentStage = name
+  log(`— ${name}`)
+}
+
 async function main() {
   log(`Tuesday job starting for ${TODAY} (dry=${DRY_RUN})`)
 
+  stage('read context')
   const context = await readContext()
   log(`v${context.nextVersion} — previous iteration: ${context.previousIterationDate ?? 'none'} — model: ${context.model}`)
 
-  if (context.previousIterationDate) {
+  // Re-run guard. Without this, a second run on the same day merges over the
+  // existing archive snapshot and writes a duplicate memory entry, producing two
+  // timeline items pointing at one URL. process.md promises the archive is never
+  // overwritten; this is what makes that true.
+  if (context.previousIterationDate === TODAY && !DRY_RUN && !FORCE) {
+    throw new Error(
+      `An iteration is already logged for ${TODAY}. Re-running would overwrite its archive snapshot ` +
+      `and double-log memory.md. Set FORCE=true only if you have first removed the existing entry ` +
+      `from memory.md and the site/archive/${TODAY}/ directory.`,
+    )
+  }
+
+  if (context.previousIterationDate && context.previousIterationDate !== TODAY) {
     // Belt-and-braces: re-snapshot the previous iteration in case the end-of-run snapshot ever failed.
+    stage('snapshot previous iteration')
     await snapshotIteration(context.previousIterationDate)
   }
 
+  stage('generate')
   let generated = await generate(context)
 
+  stage('validate and review')
   try {
     await validateAndReview(generated, context)
   } catch (firstErr) {
-    log(`Validation or content review failed once: ${firstErr}. Asking generator to fix.`)
-    generated = await regenerateWithFix(context, generated, String(firstErr))
+    // Only a genuine problem with the OUTPUT earns a regeneration. An unavailable
+    // reviewer, a network error or a bug in our own code must abort instead —
+    // regenerating an entire site because the gate itself broke is expensive and
+    // tells the generator something untrue about its work.
+    if (!(firstErr instanceof ValidationError)) throw firstErr
+    log(`Validation or content review failed once: ${firstErr.message}. Asking generator to fix.`)
+    stage('regenerate after validation failure')
+    generated = await regenerateWithFix(context, generated, firstErr.message)
     await validateAndReview(generated, context)
   }
 
@@ -103,54 +124,78 @@ async function main() {
     return
   }
 
+  stage('write site')
   await writeSite(generated.files)
-  // Belt-and-braces: ensure the memory entry records visitorQuestion state so the
-  // next iteration's rate-limit check can read it.
-  const memoryEntry = ensureVisitorQuestionFlag(generated.memoryEntry, !!generated.visitorQuestion)
-  await appendFileSafe('memory.md', '\n\n' + memoryEntry)
-  await appendFileSafe('evaluation.md', '\n\n' + generated.evaluationEntry)
+  await syncAssets()
+
+  stage('append logs')
+  // The script owns the heading. See scripts/memory.ts for why.
+  const memoryEntry = buildMemoryEntry({
+    date: TODAY,
+    version: generated.version,
+    body: generated.memoryEntry,
+    hadQuestion: !!generated.visitorQuestion,
+  })
+  await appendFileSafe('memory.md', '\n\n' + memoryEntry + '\n')
+  await appendFileSafe('evaluation.md', '\n\n' + generated.evaluationEntry.trim() + '\n')
+
   if (context.pendingDirective) {
+    stage('apply directive')
     await applyDirective(context.pendingDirective.path, generated.version)
   }
 
   // Snapshot the just-shipped iteration so /archive/{TODAY}/ exists immediately
-  // and the timeline's links work from the moment v0 is live.
+  // and the timeline's links work from the moment it is live.
+  stage('snapshot this iteration')
   await snapshotIteration(TODAY)
 
-  // Regenerate /timeline/, /feed.xml, /sitemap.xml, /robots.txt from the now-updated memory.
+  stage('generate timeline and feed')
   const memoryAfter = await read('memory.md')
   await generateTimelineAndFeed(ROOT, memoryAfter)
 
-  // Marketing: generate drafts, post to channels with autopost + creds, log results.
-  // Wrapped so failures don't abort the run — marketing is a side-effect.
-  let marketingResult: MarketingResult | null = null
+  // Push BEFORE marketing. Marketing announces a URL; announcing it before the
+  // deploy means a failed push leaves a live post pointing at a 404.
+  stage('commit and push')
+  pullRebaseAndPush(generated.version, generated.brief)
+
+  stage('marketing')
+  const marketingResult = await runMarketingSafely(generated, context)
+
+  stage('notify')
+  await notify({ ok: true, generated, marketing: marketingResult })
+  log(`v${generated.version} shipped.`)
+}
+
+async function runMarketingSafely(
+  generated: GeneratedIteration,
+  context: Context,
+): Promise<MarketingResult | null> {
   try {
     if (context.pendingDirective?.marketingSkip) {
       log('Marketing skipped by directive.')
-    } else {
-      const payload: MarketingPayload = {
-        version: generated.version,
-        date: TODAY,
-        brief: generated.brief,
-        headline: generated.marketing.headline,
-        postShort: generated.marketing.postShort,
-        postMedium: generated.marketing.postMedium,
-        postLong: generated.marketing.postLong,
-        imageAlt: generated.marketing.imageAlt,
-        hashtags: generated.marketing.hashtags,
-        url: 'https://jordanpitts.com/',
-        archiveUrl: `https://jordanpitts.com/archive/${TODAY}/`,
-      }
-      marketingResult = await runMarketing(ROOT, payload)
-      log(`Marketing: ${marketingResult.channels.map(c => `${c.channel}=${c.status}`).join(', ')}`)
+      return null
     }
+    const payload: MarketingPayload = {
+      version: generated.version,
+      date: TODAY,
+      brief: generated.brief,
+      headline: generated.marketing.headline,
+      postShort: generated.marketing.postShort,
+      postMedium: generated.marketing.postMedium,
+      postLong: generated.marketing.postLong,
+      imageAlt: generated.marketing.imageAlt,
+      hashtags: generated.marketing.hashtags,
+      url: 'https://jordanpitts.com/',
+      archiveUrl: `https://jordanpitts.com/archive/${TODAY}/`,
+    }
+    const result = await runMarketing(ROOT, payload)
+    log(`Marketing: ${result.channels.map(c => `${c.channel}=${c.status}`).join(', ')}`)
+    return result
   } catch (err) {
+    // Marketing is a side effect; it must never abort a shipped iteration.
     log(`Marketing module failed (continuing): ${(err as Error).message ?? err}`)
+    return null
   }
-
-  pullRebaseAndPush(generated.version, generated.brief)
-  await notify({ ok: true, generated, marketing: marketingResult })
-  log(`v${generated.version} shipped.`)
 }
 
 // ---------- Context ----------
@@ -169,8 +214,7 @@ async function readContext(): Promise<Context> {
   const recentMemoryEntries = takeLastIterationEntries(memory, 8)
   const previousIterationDate = lastIterationDateOrNull(memory)
   const previousHadQuestion = lastIterationHadQuestion(memory)
-  const lastVersion = lastIterationVersionOrMinusOne(memory)
-  const nextVersion = lastVersion + 1
+  const nextVersion = lastIterationVersionOrMinusOne(memory) + 1
   const model = pendingDirective?.model ?? DEFAULT_MODEL
 
   return {
@@ -207,18 +251,23 @@ async function findPendingDirective(): Promise<Directive | null> {
     .filter(d => d.date <= TODAY)
     .sort((a, b) => b.date.localeCompare(a.date))
   if (!dated.length) return null
+  if (dated.length > 1) {
+    // Loud, because the older ones are otherwise ignored forever while being
+    // re-read every week.
+    log(`WARNING: ${dated.length} pending directives. Applying ${dated[0].name}; ignoring ${dated.slice(1).map(d => d.name).join(', ')}. Move or delete the stale ones.`)
+  }
   const path = join(dir, dated[0].name)
   const content = await fs.readFile(path, 'utf-8')
-  // Allow a directive to set the model via a frontmatter-style line: `model: claude-sonnet-4-6`
+  // A directive may set the model: `model: claude-fable-5`
   const modelMatch = content.match(/^model:\s*([a-z0-9.\-]+)/im)
-  // Allow a directive to skip marketing for one iteration: `marketing: skip`
+  // A directive may skip marketing for one iteration: `marketing: skip`
   const skipMatch = content.match(/^marketing:\s*skip\b/im)
   return { path, content, model: modelMatch?.[1], marketingSkip: !!skipMatch }
 }
 
 async function fetchAnalyticsSummary(): Promise<string> {
-  // TODO: Supabase query for previous iteration's metric result.
-  // For v0 (first run) there is nothing to fetch.
+  // TODO(phase-5): query Plausible for the previous iteration's chosen metric.
+  // Until then the evaluation loop is open, and evaluation.md says so.
   return 'No prior iteration analytics yet.'
 }
 
@@ -228,10 +277,11 @@ async function snapshotIteration(archiveDate: string) {
   const src = join(ROOT, 'site')
   const dst = join(ROOT, 'site', 'archive', archiveDate)
   if (!existsSync(src)) return
+  // Replace, never merge. Merging left orphaned files from a previous snapshot
+  // behind, silently polluting an archive that is supposed to be immutable.
+  await fs.rm(dst, { recursive: true, force: true })
   await fs.mkdir(dst, { recursive: true })
-  // Exclude shared infrastructure and generated published-history files from the snapshot.
-  // The archive of an iteration is just that iteration's own files.
-  await copyDirExcluding(src, dst, ['archive', '_', 'timeline', 'feed.xml', 'sitemap.xml', 'robots.txt'])
+  await copyDirExcluding(src, dst, SNAPSHOT_EXCLUDE)
   log(`Snapshotted iteration into site/archive/${archiveDate}/`)
 }
 
@@ -262,7 +312,7 @@ async function generate(context: Context): Promise<GeneratedIteration> {
     messages: [{ role: 'user', content: user }],
   })
 
-  return parseGeneratorOutput(text)
+  return parseGeneratorOutput(text, context)
 }
 
 function buildUserPrompt(c: Context): string {
@@ -272,6 +322,7 @@ function buildUserPrompt(c: Context): string {
 
   return [
     `Today is ${TODAY}. Generating v${c.nextVersion}. Model in use: ${c.model}.`,
+    `The page must visibly show the date ${TODAY} and the version v${c.nextVersion}.`,
     '',
     '## rules.md\n' + c.rules,
     '## manifesto.md\n' + c.manifesto,
@@ -292,75 +343,21 @@ function buildUserPrompt(c: Context): string {
   ].join('\n\n')
 }
 
-function parseGeneratorOutput(text: string): GeneratedIteration {
+export function parseGeneratorOutput(text: string, ctx: { nextVersion: number }): GeneratedIteration {
   const startIdx = text.indexOf(OUTPUT_START)
   const endIdx = text.lastIndexOf(OUTPUT_END)
   if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx) {
-    throw new Error(`Generator output missing sentinels (${OUTPUT_START} ... ${OUTPUT_END})`)
+    throw new ValidationError(`Generator output missing sentinels (${OUTPUT_START} ... ${OUTPUT_END})`)
   }
   const inner = text.slice(startIdx + OUTPUT_START.length, endIdx).trim()
-  let parsed: any
+  let parsed: unknown
   try {
     parsed = JSON.parse(inner)
   } catch (err) {
-    throw new Error(`Generator output is not valid JSON: ${(err as Error).message}`)
+    throw new ValidationError(`Generator output is not valid JSON: ${(err as Error).message}`)
   }
-  assertShape(parsed)
+  assertShape(parsed, { expectedVersion: ctx.nextVersion })
   return parsed
-}
-
-function assertShape(o: any): asserts o is GeneratedIteration {
-  const required = ['version', 'brief', 'evaluationMetric', 'files', 'memoryEntry', 'evaluationEntry', 'marketing']
-  for (const k of required) {
-    if (!(k in o)) throw new Error(`Generator output missing required field: ${k}`)
-  }
-  if (!Array.isArray(o.files) || o.files.length === 0) {
-    throw new Error('Generator output has no files')
-  }
-  // Marketing block shape
-  const m = o.marketing
-  if (typeof m !== 'object' || m === null) throw new Error('Generator output marketing block is not an object')
-  const marketingFields = ['headline', 'postShort', 'postMedium', 'postLong', 'imageAlt']
-  for (const k of marketingFields) {
-    if (typeof m[k] !== 'string' || !m[k].trim()) {
-      throw new Error(`Generator output marketing.${k} is missing or empty`)
-    }
-  }
-  if (!Array.isArray(m.hashtags)) {
-    throw new Error('Generator output marketing.hashtags is not an array')
-  }
-  if (m.postShort.length > 280) {
-    throw new Error(`Generator output marketing.postShort exceeds 280 chars (${m.postShort.length})`)
-  }
-  if (m.postMedium.length > 500) {
-    throw new Error(`Generator output marketing.postMedium exceeds 500 chars (${m.postMedium.length})`)
-  }
-  for (const f of o.files) {
-    if (typeof f.path !== 'string' || typeof f.content !== 'string') {
-      throw new Error('Generator output has a malformed file entry')
-    }
-    if (
-      f.path.startsWith('/') ||
-      f.path.startsWith('..') ||
-      f.path.startsWith('archive/') ||
-      f.path.startsWith('_/') ||
-      f.path.startsWith('timeline/') ||
-      f.path === 'feed.xml' ||
-      f.path === 'sitemap.xml' ||
-      f.path === 'robots.txt'
-    ) {
-      throw new Error(`Generator output has an illegal path (reserved or escaping): ${f.path}`)
-    }
-    const normalised = normalize(f.path)
-    if (normalised.startsWith('..') || resolve(ROOT, 'site', normalised).indexOf(resolve(ROOT, 'site') + '/') !== 0) {
-      // Ensure resolved path lives strictly under site/
-      // (we don't actually use normalised below; just guard against traversal)
-      throw new Error(`Generator output path escapes site/: ${f.path}`)
-    }
-  }
-  if (!o.files.some((f: GeneratedFile) => f.path === 'index.html')) {
-    throw new Error('Generator output is missing index.html')
-  }
 }
 
 async function regenerateWithFix(
@@ -388,18 +385,20 @@ async function regenerateWithFix(
     ],
   })
 
-  return parseGeneratorOutput(text)
+  return parseGeneratorOutput(text, context)
 }
 
 // ---------- Validation ----------
 
 async function validateAndReview(g: GeneratedIteration, ctx: Context): Promise<ReviewResult> {
-  // Visitor question rate limit: at most one in every two iterations.
-  if (ctx.previousHadQuestion && g.visitorQuestion) {
-    throw new Error('Visitor question rate limit violated: previous iteration already included a visitorQuestion. Omit it this iteration.')
-  }
-  await validate(g, ctx)
+  validateIteration(g, {
+    assetPaths: ctx.assetPaths,
+    expectedVersion: ctx.nextVersion,
+    expectedDate: TODAY,
+    previousHadQuestion: ctx.previousHadQuestion,
+  })
   log('Deterministic validation passed. Running content review.')
+
   const review = await contentReview({
     rules: ctx.rules,
     morality: ctx.morality,
@@ -413,119 +412,47 @@ async function validateAndReview(g: GeneratedIteration, ctx: Context): Promise<R
   if (review.verdict === 'fail') {
     const detail = review.issues.length ? review.issues.join('; ') : 'no specific issue listed'
     const notes = review.notes ? ` — ${review.notes}` : ''
-    throw new Error(`Content review FAIL: ${detail}${notes}`)
+    throw new ValidationError(`Content review FAIL: ${detail}${notes}`)
   }
   log(`Content review passed: ${review.notes || 'no notes'}`)
   return review
 }
 
-async function validate(g: GeneratedIteration, ctx: Context) {
-  // 1. index.html exists (already checked in assertShape but double-check)
-  const htmls = g.files.filter(f => f.path.endsWith('.html'))
-  if (!htmls.some(f => f.path === 'index.html')) {
-    throw new Error('No index.html in generated files')
-  }
-
-  // 2. HTML well-formedness (light)
-  for (const f of htmls) {
-    if (!/<html[\s>]/i.test(f.content) || !/<\/html>/i.test(f.content)) {
-      throw new Error(`HTML structure check failed for ${f.path}`)
-    }
-    if (!/<head[\s>]/i.test(f.content) || !/<\/head>/i.test(f.content)) {
-      throw new Error(`Missing <head> in ${f.path}`)
-    }
-  }
-
-  // 3. OG and Twitter meta on every HTML page
-  const requiredMeta = ['og:title', 'og:description', 'og:image', 'twitter:card']
-  for (const f of htmls) {
-    for (const m of requiredMeta) {
-      if (!f.content.includes(m)) {
-        throw new Error(`Missing meta ${m} in ${f.path}`)
-      }
-    }
-  }
-
-  // 4. Consent script reference on every HTML page
-  for (const f of htmls) {
-    if (!f.content.includes('/_/consent.js')) {
-      throw new Error(`${f.path} does not reference /_/consent.js — consent banner is required on every page`)
-    }
-  }
-
-  // 5. No external script tags outside the approved analytics stack
-  const allowedScriptDomains = [
-    'googletagmanager.com',
-    'plausible.io',
-    'jordanpitts.com',
-  ]
-  for (const f of htmls) {
-    const scriptSrcs = [...f.content.matchAll(/<script[^>]+src=["']([^"']+)["']/gi)].map(m => m[1])
-    for (const src of scriptSrcs) {
-      if (src.startsWith('http')) {
-        const host = new URL(src).hostname
-        if (!allowedScriptDomains.some(d => host.endsWith(d))) {
-          throw new Error(`Disallowed external script in ${f.path}: ${src}`)
-        }
-      }
-    }
-  }
-
-  // 6. Asset references in HTML must exist in assets/, or be generated files, or live under /_/
-  for (const f of htmls) {
-    const refs = [...f.content.matchAll(/(?:src|href)=["']([^"']+)["']/gi)].map(m => m[1])
-    for (const ref of refs) {
-      if (ref.startsWith('http') || ref.startsWith('//') || ref.startsWith('mailto:') || ref.startsWith('#')) continue
-      if (ref.startsWith('/assets/')) {
-        const assetRel = ref.slice('/assets/'.length).split('?')[0].split('#')[0]
-        if (!ctx.assetPaths.has(assetRel)) {
-          throw new Error(`Reference to missing asset in ${f.path}: ${ref}`)
-        }
-      } else if (ref.startsWith('/_/')) {
-        // Infrastructure — checked separately, assumed to exist
-        continue
-      } else if (ref.startsWith('/archive/')) {
-        // OK — links into the archive
-        continue
-      } else if (ref.startsWith('/')) {
-        // Site-internal absolute — must match one of the generated files
-        const target = ref.slice(1).split('?')[0].split('#')[0]
-        if (target && !g.files.some(file => file.path === target)) {
-          throw new Error(`Reference to non-existent site path in ${f.path}: ${ref}`)
-        }
-      } else {
-        // Relative — must match one of the generated files
-        const target = ref.split('?')[0].split('#')[0]
-        if (target && !g.files.some(file => file.path === target)) {
-          throw new Error(`Reference to non-existent file in ${f.path}: ${ref}`)
-        }
-      }
-    }
-  }
-
-  // 7. Headless render check is deferred (will add Puppeteer in a follow-up).
-}
-
 // ---------- Writing ----------
 
-async function writeSite(files: GeneratedFile[]) {
+async function writeSite(files: { path: string; content: string }[]) {
   const siteDir = join(ROOT, 'site')
   const entries = existsSync(siteDir)
     ? await fs.readdir(siteDir, { withFileTypes: true })
     : []
   for (const e of entries) {
-    if (e.name === 'archive') continue
-    if (e.name === '_') continue
-    const p = join(siteDir, e.name)
-    await fs.rm(p, { recursive: true, force: true })
+    if (ORCHESTRATOR_OWNED.includes(e.name)) continue
+    await fs.rm(join(siteDir, e.name), { recursive: true, force: true })
   }
   await fs.mkdir(siteDir, { recursive: true })
   for (const f of files) {
-    const p = join(siteDir, f.path)
+    // Write the NORMALISED path, never the raw one, or normalisation was pointless.
+    const safe = assertWritablePath(f.path)
+    const p = join(siteDir, safe)
     await fs.mkdir(dirname(p), { recursive: true })
     await fs.writeFile(p, f.content)
   }
   log(`Wrote ${files.length} files into site/`)
+}
+
+/**
+ * Copy assets/ into site/assets/ so that /assets/... references actually resolve.
+ * Vercel serves site/ only; assets/ is a sibling at the repo root, so every
+ * /assets/ reference used to 404 in production while passing validation.
+ */
+async function syncAssets() {
+  const src = join(ROOT, 'assets')
+  if (!existsSync(src)) return
+  const dst = join(ROOT, 'site', 'assets')
+  await fs.rm(dst, { recursive: true, force: true })
+  await fs.mkdir(dst, { recursive: true })
+  await copyDirExcluding(src, dst, ['README.md'])
+  log('Synced assets/ into site/assets/')
 }
 
 async function applyDirective(directivePath: string, version: number) {
@@ -540,19 +467,23 @@ async function applyDirective(directivePath: string, version: number) {
 // ---------- Commit & push ----------
 
 function pullRebaseAndPush(version: number, brief: string) {
-  // Rebase on top of any commits Jordan made while the job was generating.
   run('git', ['config', 'user.email', 'claude@jordanpitts.com'])
   run('git', ['config', 'user.name', 'Claude'])
   run('git', ['add', '-A'])
   const shortBrief = brief.replace(/\s+/g, ' ').slice(0, 80)
   run('git', ['commit', '-m', `v${version}: ${shortBrief}`])
-  // Pull with rebase to fold in any remote changes; --autostash for any uncommitted residue (shouldn't be any).
   run('git', ['pull', '--rebase', '--autostash', 'origin', 'main'])
   run('git', ['push', 'origin', 'HEAD:main'])
 }
 
 function run(cmd: string, args: string[]) {
   const r = spawnSync(cmd, args, { stdio: 'inherit' })
+  if (r.error) {
+    throw new Error(`Command could not be run: ${cmd} ${args.join(' ')} — ${r.error.message}`)
+  }
+  if (r.signal) {
+    throw new Error(`Command killed by signal ${r.signal}: ${cmd} ${args.join(' ')}`)
+  }
   if (r.status !== 0) {
     throw new Error(`Command failed: ${cmd} ${args.join(' ')} (exit ${r.status})`)
   }
@@ -560,7 +491,13 @@ function run(cmd: string, args: string[]) {
 
 // ---------- Notify ----------
 
-async function notify(payload: { ok: boolean; generated?: GeneratedIteration; error?: string; marketing?: MarketingResult | null }) {
+async function notify(payload: {
+  ok: boolean
+  generated?: GeneratedIteration
+  error?: string
+  stage?: string
+  marketing?: MarketingResult | null
+}) {
   const apiKey = process.env.RESEND_API_KEY
   const to = process.env.NOTIFY_EMAIL
   const fromAddress = process.env.NOTIFY_FROM ?? 'Claude <onboarding@resend.dev>'
@@ -570,7 +507,8 @@ async function notify(payload: { ok: boolean; generated?: GeneratedIteration; er
   }
   const subject = payload.ok
     ? `jordanpitts.com v${payload.generated!.version} shipped`
-    : `jordanpitts.com Tuesday job FAILED`
+    : `jordanpitts.com Tuesday job FAILED at: ${payload.stage ?? 'unknown stage'}`
+
   const marketingLines: string[] = []
   if (payload.marketing) {
     marketingLines.push('', 'Marketing:')
@@ -579,6 +517,7 @@ async function notify(payload: { ok: boolean; generated?: GeneratedIteration; er
       marketingLines.push(`  - ${c.channel}: ${c.status}${detail}`)
     }
   }
+
   const body = payload.ok
     ? [
         `Brief: ${payload.generated!.brief}`,
@@ -590,8 +529,18 @@ async function notify(payload: { ok: boolean; generated?: GeneratedIteration; er
         payload.generated!.notes ?? '(none)',
         ...marketingLines,
       ].join('\n')
-    : `Error: ${payload.error}`
-  await fetch('https://api.resend.com/emails', {
+    : [
+        `Stage: ${payload.stage ?? 'unknown'}`,
+        `Date: ${TODAY}`,
+        '',
+        `Error: ${payload.error}`,
+        '',
+        'The live site was not modified unless the failure occurred after the push step.',
+      ].join('\n')
+
+  // The response was never checked, so a bad key meant failures were announced
+  // to nobody — the worst possible silent failure in a notification path.
+  const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
@@ -599,6 +548,12 @@ async function notify(payload: { ok: boolean; generated?: GeneratedIteration; er
     },
     body: JSON.stringify({ from: fromAddress, to, subject, text: body }),
   })
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '(no body)')
+    console.error(`[tuesday] NOTIFY FAILED: Resend returned ${res.status} ${res.statusText} — ${detail}`)
+    return
+  }
+  log(`Notification sent to ${to}`)
 }
 
 // ---------- Helpers ----------
@@ -615,55 +570,21 @@ async function writeArtefact(name: string, content: string) {
   await fs.writeFile(join(ROOT, name), content)
 }
 
-function parseIterationHeadings(memory: string): { date: string; version: number; raw: string }[] {
-  const out: { date: string; version: number; raw: string }[] = []
-  const lines = memory.split('\n')
-  for (const line of lines) {
-    const m = line.match(/^##\s+(\d{4}-\d{2}-\d{2})\s+—\s+v(\d+)/)
-    if (m) out.push({ date: m[1], version: parseInt(m[2], 10), raw: line })
-  }
-  return out
-}
-
-function lastIterationDateOrNull(memory: string): string | null {
-  const entries = parseIterationHeadings(memory)
-  if (!entries.length) return null
-  return entries[entries.length - 1].date
-}
-
-function lastIterationVersionOrMinusOne(memory: string): number {
-  const entries = parseIterationHeadings(memory)
-  if (!entries.length) return -1
-  return entries[entries.length - 1].version
-}
-
-function takeLastIterationEntries(memory: string, n: number): string {
-  const sections = memory.split(/^## /gm).slice(1).map(s => '## ' + s)
-  const iterations = sections.filter(s => /^## \d{4}-\d{2}-\d{2}\s+—\s+v\d+/.test(s))
-  return iterations.slice(-n).join('\n\n')
-}
-
-function lastIterationHadQuestion(memory: string): boolean {
-  const sections = memory.split(/^## /gm).slice(1).map(s => '## ' + s)
-  const iterations = sections.filter(s => /^## \d{4}-\d{2}-\d{2}\s+—\s+v\d+/.test(s))
-  if (!iterations.length) return false
-  const last = iterations[iterations.length - 1]
-  return /^Visitor question:\s*yes\b/im.test(last)
-}
-
-function ensureVisitorQuestionFlag(entry: string, hadQuestion: boolean): string {
-  if (/^Visitor question:\s*(yes|no)\b/im.test(entry)) return entry
-  return entry.trimEnd() + `\nVisitor question: ${hadQuestion ? 'yes' : 'no'}\n`
-}
-
 function log(msg: string) {
   console.log(`[tuesday] ${msg}`)
 }
 
 // ---------- Entry ----------
 
-main().catch(async (err) => {
-  console.error(err)
-  try { await notify({ ok: false, error: String(err?.message ?? err) }) } catch {}
-  process.exit(1)
-})
+// Only run when executed directly, so tests can import from this module.
+if (process.argv[1] && /tuesday\.[tj]s$/.test(process.argv[1])) {
+  main().catch(async (err) => {
+    console.error(err)
+    try {
+      await notify({ ok: false, error: String(err?.message ?? err), stage: currentStage })
+    } catch (notifyErr) {
+      console.error(`[tuesday] notify itself threw: ${notifyErr}`)
+    }
+    process.exit(1)
+  })
+}

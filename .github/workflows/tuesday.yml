@@ -10,7 +10,7 @@ on:
         type: boolean
         default: false
       model:
-        description: 'Override model (e.g. claude-opus-4-7, claude-sonnet-4-6, claude-haiku-4-5-20251001)'
+        description: 'Override model (e.g. claude-opus-5, claude-fable-5). Verify any ID against the live model list first — an invented one fails every run.'
         required: false
         default: ''
 
@@ -36,26 +36,33 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      # Use npm install (not npm ci) so first-time bring-up works without
-      # requiring the user to generate a lockfile locally first. Once a
-      # package-lock.json is committed, npm install still honours it.
-      - run: npm install --no-audit --no-fund
+      # npm ci, not npm install: rules.md requires pinned dependencies, and the
+      # lockfile is committed. npm install is free to drift it.
+      - run: npm ci --no-fund
+
+      # rules.md: "no known CVEs at deploy time". Previously disabled outright
+      # with --no-audit, which made that line decorative.
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
 
       - name: Type-check
-        run: npx tsc --noEmit
+        run: npm run typecheck
+
+      # The gate on the gate. If the validator's own tests do not pass, the
+      # validator is not trustworthy and nothing should ship.
+      - name: Test
+        run: npm test
 
       - name: Run Tuesday job
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           NOTIFY_EMAIL: ${{ secrets.NOTIFY_EMAIL }}
           NOTIFY_FROM: ${{ secrets.NOTIFY_FROM }}
           DRY_RUN: ${{ inputs.dry_run }}
-          MODEL: ${{ inputs.model || 'claude-opus-4-7' }}
+          MODEL: ${{ inputs.model || 'claude-opus-5' }}
           REVIEW_MODEL: ${{ secrets.REVIEW_MODEL || 'claude-haiku-4-5-20251001' }}
           # Marketing
           MARKETING_ENABLED: ${{ secrets.MARKETING_ENABLED || 'true' }}
@@ -69,3 +76,16 @@ jobs:
           MASTODON_ACCESS_TOKEN: ${{ secrets.MASTODON_ACCESS_TOKEN }}
           BUTTONDOWN_API_KEY: ${{ secrets.BUTTONDOWN_API_KEY }}
         run: npx tsx scripts/tuesday.ts
+
+      # A generation that fails after the model call is a week's work thrown away
+      # with the runner. Keep it so the run can be replayed or salvaged by hand.
+      - name: Preserve generator output on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: generator-output-${{ github.run_id }}
+          path: |
+            dry-run-output.json
+            site/
+          retention-days: 30
+          if-no-files-found: ignore

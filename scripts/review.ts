@@ -98,14 +98,41 @@ You return JSON wrapped between ${REVIEW_START} and ${REVIEW_END}.`
     '}',
   ].join('\n')
 
-  const text = await callLLM({
-    model,
-    system,
-    messages: [{ role: 'user', content: user }],
-    maxTokens: 4000,
-  })
+  // Retry the REVIEW call on a malformed reviewer response, rather than letting
+  // it surface as a validation failure. Previously a Haiku formatting hiccup told
+  // the generator "your output failed validation" and made it regenerate an entire
+  // website that had nothing wrong with it — expensive and actively misleading.
+  let lastErr: unknown
+  for (let attempt = 1; attempt <= REVIEW_ATTEMPTS; attempt++) {
+    const text = await callLLM({
+      model,
+      system,
+      messages: [{ role: 'user', content: user }],
+      maxTokens: 4000,
+    })
+    try {
+      return parseReview(text)
+    } catch (err) {
+      lastErr = err
+      console.log(`[review] reviewer returned an unparseable response (attempt ${attempt}/${REVIEW_ATTEMPTS}): ${(err as Error).message}`)
+    }
+  }
+  throw new ReviewUnavailableError(
+    `Content reviewer returned an unparseable response ${REVIEW_ATTEMPTS} times: ${(lastErr as Error)?.message ?? lastErr}`,
+  )
+}
 
-  return parseReview(text)
+const REVIEW_ATTEMPTS = 3
+
+/**
+ * The reviewer failed to answer — distinct from the reviewer answering "fail".
+ * The caller must not treat this as a content problem with the iteration.
+ */
+export class ReviewUnavailableError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'ReviewUnavailableError'
+  }
 }
 
 function parseReview(text: string): ReviewResult {

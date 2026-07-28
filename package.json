@@ -5,11 +5,13 @@
   "description": "An evolving website regenerated weekly by Claude.",
   "scripts": {
     "tuesday": "tsx scripts/tuesday.ts",
-    "tuesday:dry": "DRY_RUN=true tsx scripts/tuesday.ts"
+    "tuesday:dry": "DRY_RUN=true tsx scripts/tuesday.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test scripts/__tests__/*.test.ts",
+    "check": "npm run typecheck && npm test"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.30.0",
-    "@supabase/supabase-js": "^2.45.0"
+    "@anthropic-ai/sdk": "^0.30.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

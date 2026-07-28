@@ -20,7 +20,11 @@ An evolving website. Regenerated weekly. Archived in full. Actively marketed.
 - `marketing/` — generated post drafts (`drafts/<date>/`) and the marketing log
 
 ## Code
-- `scripts/tuesday.ts` — the weekly job
+- `scripts/tuesday.ts` — the weekly job (orchestration only)
+- `scripts/paths.ts` — path normalisation and the reserved-path rules; the security boundary
+- `scripts/validate.ts` — deterministic validation of a generated iteration
+- `scripts/memory.ts` — parsing and construction of `memory.md` iteration entries
+- `scripts/__tests__/` — the test suite. `npm run check` runs typecheck + tests
 - `scripts/llm.ts` — provider-agnostic LLM client (Anthropic / OpenAI / Gemini, auto-detected)
 - `scripts/timeline.ts` — generates `/timeline/`, `/feed.xml`, `/sitemap.xml`, `/robots.txt` from `memory.md`
 - `scripts/review.ts` — second-Claude content review pass against rules and morality (covers marketing copy too)
@@ -34,8 +38,8 @@ An evolving website. Regenerated weekly. Archived in full. Actively marketed.
 - `site/<other files>` — current iteration's assets
 - `site/archive/YYYY-MM-DD/` — past iterations, immutable
 - `site/_/` — shared infrastructure preserved across iterations:
-  - `site/_/consent.js` — cookie consent + conditional analytics loader (honours Do Not Track)
-  - `site/_/og-default.svg` — default Open Graph image (iterations may override)
+  - `site/_/analytics.js` — cookieless Plausible loader (honours Do Not Track and Global Privacy Control). No consent banner: nothing personal is stored
+  - `site/_/og-default.png` — default Open Graph image, absolute-URL PNG (iterations may override)
 - `site/timeline/` — published chronological log, regenerated each Tuesday from `memory.md`
 - `site/feed.xml` — RSS feed, regenerated each Tuesday
 - `site/sitemap.xml` — search engine sitemap, regenerated each Tuesday
@@ -64,9 +68,9 @@ Full detail in `process.md`.
 ## Stack
 - Source: GitHub
 - Deploy + cron: Vercel + GitHub Actions
-- Data + analytics aggregation: Supabase (deferred for v0)
+- Data + analytics aggregation: deferred (see PLAN.md, Phase 5)
 - Domain registration: SiteGround (DNS points at Vercel)
-- Analytics: GA4 + Plausible + server logs, with a hand-rolled consent banner
+- Analytics: Plausible (cookieless) + server logs. No consent banner required
 
 ## Versioning
 - v0: first deployed iteration (target: 2026-05-19)
@@ -80,4 +84,5 @@ Full detail in `process.md`.
   - `gpt-*`, `o1*`, `o3*`, `o4*` → OpenAI (needs `OPENAI_API_KEY`)
   - `gemini-*` → Google Gemini (needs `GEMINI_API_KEY`)
 - A directive may override the model with a `model: <id>` line in the directive file.
-- Default generator: `claude-opus-4-7`. Default content reviewer: `claude-haiku-4-5-20251001`. Both swappable.
+- Default generator: `claude-opus-5`. Alternate for code-heavy iterations: `claude-fable-5`. Default content reviewer: `claude-haiku-4-5-20251001`. All swappable.
+- Model IDs are dateless from the Claude 4.6 generation onward. **Verify any ID against the live model list before setting it** — an invented ID fails every run at the first API call.

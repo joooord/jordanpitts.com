@@ -41,15 +41,42 @@ export async function callLLM(opts: LLMCallOptions): Promise<string> {
 
 // ---------- Anthropic ----------
 
+/**
+ * Default output ceiling. The previous value (64000) exceeded the Opus output cap
+ * and produced a 400 on the configured default model.
+ */
+export const ANTHROPIC_DEFAULT_MAX_TOKENS = 32000
+
+/** Hard ceiling on a single generation. Below the CI job timeout, deliberately. */
+const ANTHROPIC_TIMEOUT_MS = 15 * 60 * 1000
+
 async function callAnthropic(opts: LLMCallOptions): Promise<string> {
-  const client = new Anthropic()
-  const response = await client.messages.create({
-    model: opts.model,
-    max_tokens: opts.maxTokens ?? 64000,
-    system: opts.system,
-    messages: opts.messages.map(m => ({ role: m.role, content: m.content })),
-  })
-  return response.content
+  // Streaming, not messages.create. A non-streaming call inherits the SDK's
+  // 10-minute timeout and retries twice, which totals exactly the CI job timeout —
+  // so a hung generation was SIGKILLed by the runner and no failure email was
+  // ever sent. Streaming keeps the connection observable and bounded.
+  const client = new Anthropic({ timeout: ANTHROPIC_TIMEOUT_MS, maxRetries: 1 })
+
+  const message = await client.messages
+    .stream({
+      model: opts.model,
+      max_tokens: opts.maxTokens ?? ANTHROPIC_DEFAULT_MAX_TOKENS,
+      system: opts.system,
+      messages: opts.messages.map(m => ({ role: m.role, content: m.content })),
+    })
+    .finalMessage()
+
+  // Truncation was previously indistinguishable from a malformed response: the
+  // end sentinel was simply missing, and the run reported "missing sentinels",
+  // then retried into the same wall. Name the real cause.
+  if (message.stop_reason === 'max_tokens') {
+    throw new Error(
+      `Generation hit the ${opts.maxTokens ?? ANTHROPIC_DEFAULT_MAX_TOKENS}-token output limit and was truncated. ` +
+      `The iteration is too large to emit in one response — reduce its scope or raise maxTokens.`,
+    )
+  }
+
+  return message.content
     .filter((b): b is Anthropic.TextBlock => b.type === 'text')
     .map(b => b.text)
     .join('\n')

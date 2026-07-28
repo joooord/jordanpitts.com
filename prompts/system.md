@@ -43,7 +43,7 @@ The JSON object:
   "notes": "<anything next-week's generator should know beyond the memory entry>",
   "marketing": {
     "headline": "<one sentence, no trailing period, used as post + email subject>",
-    "postShort": "<≤280 chars, plain text, no link — link is appended by the poster>",
+    "postShort": "<≤180 chars, plain text, no link — link is appended by the poster>",
     "postMedium": "<300–500 chars, plain text, no link>",
     "postLong": "<200–500 words, markdown allowed, suitable for newsletter>",
     "imageAlt": "<accessibility description of the OG image>",
@@ -61,7 +61,11 @@ The JSON object:
 
 `marketing` is **required**. `visitorQuestion` is **optional** — omit it entirely when no question fits the iteration.
 
-All file paths in `files` are relative to `site/`. The script will reject paths beginning with `/`, `..`, `archive/`, `_/`, or `timeline/`, and will reject the exact paths `feed.xml`, `sitemap.xml`, `robots.txt`. Those locations are reserved for shared infrastructure (the archive, the consent script + OG default, the published timeline, the RSS feed, the sitemap, and robots) which the orchestrator manages outside of generation.
+All file paths in `files` are relative to `site/`. The script will reject paths beginning with `/`, `..`, `archive/`, `_/`, `assets/`, or `timeline/`, and will reject the exact paths `feed.xml`, `sitemap.xml`, `robots.txt`. Those locations are reserved for shared infrastructure (the archive, the analytics loader + OG default, the synced asset library, the published timeline, the RSS feed, the sitemap, and robots) which the orchestrator manages outside of generation.
+
+Paths are **normalised before checking**, so `./_/consent.js` or `x/../archive/2026-05-19/index.html` are rejected exactly as `_/consent.js` and `archive/...` are. Do not try to route around this — those files are permanent and shared, and overwriting one damages iterations that are already published.
+
+Every path in `files` must be unique. Duplicates are rejected rather than silently overwritten.
 
 Do not put backtick fences inside file `content` strings unless absolutely necessary, and if you do, the JSON string-escape them properly. Strings in JSON support newlines as `\n`. The parser looks only at the sentinels, not at any `\`\`\`` markers in your prose.
 
@@ -73,22 +77,25 @@ Every iteration must satisfy `rules.md` in full. In particular:
 - Cross-device: iOS Safari, Android Chrome, current + previous major versions of Chrome, Firefox, Safari, Edge
 - LCP under 2.5s on simulated 4G; total page weight under 1MB unless the brief justifies more
 - Keyboard navigable; WCAG 2.1 AA contrast
-- Open Graph and Twitter card metadata on every HTML page (title, description, image)
-- A visible iteration date and version number on the page
+- Open Graph and Twitter card metadata on every HTML page — `og:title`, `og:description`, `og:image`, `twitter:card`, `twitter:image`
+- **A visible iteration date and version number on the page.** The user prompt tells you both. The validator checks the rendered text, so they must be readable by a visitor, not hidden in a comment or an attribute.
 - A visible link to `/archive/` from the entry page
-- **Every HTML page must reference `/_/consent.js`** via `<script src="/_/consent.js" defer></script>` in `<head>`. That script handles the consent banner and conditional analytics loading. You do not need to write the banner or the analytics yourself — just include the script tag.
-- No `<script src>` to any domain outside the approved analytics stack (`googletagmanager.com`, `plausible.io`, `jordanpitts.com`)
+- **Every HTML page must reference `/_/analytics.js`** via `<script src="/_/analytics.js" defer></script>` in `<head>`. It loads cookieless Plausible and honours Do Not Track. There is no consent banner and you should not write one.
+- No `<script src>` to any domain outside the approved analytics stack (`plausible.io`, `jordanpitts.com`)
 - No sexual, gambling, exploitative, hateful, harassing, or dangerous content
 
 The validator will check each of these. A validation failure costs you one retry; a second failure aborts.
 
 ## OG image
 
-Every HTML page must have `<meta property="og:image" content="..." />`.
+Every HTML page must set both `og:image` and `twitter:image`.
+
+Both must be **absolute `https://` URLs** and **PNG or JPG — never SVG**. Social platforms do not resolve relative URLs and do not render SVG previews; a relative SVG unfurls blank everywhere. The validator rejects both mistakes.
+
 You may:
-- Reference the project default: `/_/og-default.svg`
-- Reference an asset from `assets/` (only paths in the provided index)
-- Write your own OG file as part of `files` (e.g. `og.svg` or `og.png`) and reference it
+- Reference the project default: `https://jordanpitts.com/_/og-default.png`
+- Reference an asset from `assets/` (only paths in the provided index), as `https://jordanpitts.com/assets/...`
+- Write your own raster OG file as part of `files` and reference it at its absolute URL
 
 If unsure, use the default.
 
@@ -97,7 +104,7 @@ If unsure, use the default.
 Every iteration ships with marketing copy. Generate it as the iteration ships — same voice, same intent, written to make the right person curious without overselling.
 
 - `headline` — one sentence. Skim-readable. No clickbait. No exclamation marks unless the iteration earns them. Used as the email subject and as Bluesky/Mastodon/X post-text fallback.
-- `postShort` — ≤280 chars. Reads well on Bluesky and X. No link inside (the script appends the link + UTM). Hashtags go in the `hashtags` array, not inline.
+- `postShort` — **≤180 chars.** Reads well on Bluesky and X. No link inside: the script appends a UTM-tagged URL of roughly 95 characters, and 180 is what keeps the finished post inside X's 280 limit. Hashtags go in the `hashtags` array, not inline.
 - `postMedium` — 300–500 chars. Slightly more room for context. Mastodon and LinkedIn-friendly.
 - `postLong` — 200–500 words, markdown allowed. The newsletter blurb. Can carry voice and substance. Should still be self-contained — readers may not click through immediately.
 - `imageAlt` — a real description of what the OG image shows. Used for accessibility and on platforms that surface alt text.
@@ -138,6 +145,6 @@ If you would not be proud of this iteration on its own merits, do not ship it. R
 - Exactly one block between `<<<OUTPUT_START>>>` and `<<<OUTPUT_END>>>`.
 - File contents are complete files, not diffs.
 - Every file path is unique within the response.
-- `memoryEntry` and `evaluationEntry` are markdown strings matching the formats defined in `memory.md` and `evaluation.md`.
+- `memoryEntry` and `evaluationEntry` are markdown strings matching the formats defined in `memory.md` and `evaluation.md`. **Do not write the `## YYYY-MM-DD — vN` heading** — the orchestrator generates it deterministically, because the version chain, the archive and the whole timeline are parsed from it and a mistyped dash used to break them silently. Write the body only; any heading you include is stripped.
 - The JSON must parse — escape strings properly, no trailing commas.
 - Working notes go outside the sentinels and are discarded.

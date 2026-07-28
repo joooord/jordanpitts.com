@@ -4,6 +4,10 @@
 
 import { promises as fs } from 'fs'
 import { join } from 'path'
+import { ITERATION_HEADING_RE } from './memory'
+
+/** Absolute, raster OG image. Social platforms resolve neither relative URLs nor SVG. */
+const OG_IMAGE = 'https://jordanpitts.com/_/og-default.png'
 
 interface IterationEntry {
   date: string
@@ -46,7 +50,7 @@ function parseEntries(memory: string): IterationEntry[] {
   const entries: IterationEntry[] = []
   let current: IterationEntry | null = null
   for (const line of lines) {
-    const m = line.match(/^##\s+(\d{4}-\d{2}-\d{2})\s+—\s+v(\d+)/)
+    const m = line.match(ITERATION_HEADING_RE)
     if (m) {
       if (current) entries.push(current)
       current = { date: m[1], version: parseInt(m[2], 10), brief: '', built: '', notes: '', model: '' }
@@ -104,11 +108,11 @@ function renderTimelineHtml(entries: IterationEntry[]): string {
   <meta name="description" content="A chronological log of every iteration of jordanpitts.com." />
   <meta property="og:title" content="Timeline — jordanpitts.com" />
   <meta property="og:description" content="A chronological log of every iteration of jordanpitts.com." />
-  <meta property="og:image" content="/_/og-default.svg" />
+  <meta property="og:image" content="${OG_IMAGE}" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:image" content="/_/og-default.svg" />
+  <meta name="twitter:image" content="${OG_IMAGE}" />
   <link rel="alternate" type="application/rss+xml" title="jordanpitts.com — iterations" href="/feed.xml" />
-  <script src="/_/consent.js" defer></script>
+  <script src="/_/analytics.js" defer></script>
   <style>
     :root { color-scheme: dark; }
     * { box-sizing: border-box; }
@@ -178,11 +182,11 @@ function renderArchiveIndex(entries: IterationEntry[]): string {
   <meta name="description" content="Every past iteration of jordanpitts.com, kept forever at a stable URL." />
   <meta property="og:title" content="Archive — jordanpitts.com" />
   <meta property="og:description" content="Every past iteration of jordanpitts.com, kept forever at a stable URL." />
-  <meta property="og:image" content="/_/og-default.svg" />
+  <meta property="og:image" content="${OG_IMAGE}" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:image" content="/_/og-default.svg" />
+  <meta name="twitter:image" content="${OG_IMAGE}" />
   <link rel="alternate" type="application/rss+xml" title="jordanpitts.com — iterations" href="/feed.xml" />
-  <script src="/_/consent.js" defer></script>
+  <script src="/_/analytics.js" defer></script>
   <style>
     :root { color-scheme: dark; }
     * { box-sizing: border-box; }
@@ -222,14 +226,16 @@ function renderArchiveIndex(entries: IterationEntry[]): string {
 }
 
 function renderSitemap(entries: IterationEntry[]): string {
-  const urls = [
-    'https://jordanpitts.com/',
-    'https://jordanpitts.com/timeline/',
-    ...entries.map(e => `https://jordanpitts.com/archive/${e.date}/`),
+  const latest = entries[0]?.date
+  const urls: { loc: string; lastmod?: string }[] = [
+    { loc: 'https://jordanpitts.com/', lastmod: latest },
+    { loc: 'https://jordanpitts.com/timeline/', lastmod: latest },
+    { loc: 'https://jordanpitts.com/archive/', lastmod: latest },
+    ...entries.map(e => ({ loc: `https://jordanpitts.com/archive/${e.date}/`, lastmod: e.date })),
   ]
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls.map(u => `  <url><loc>${u}</loc></url>`).join('\n')}
+${urls.map(u => `  <url><loc>${u.loc}</loc>${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ''}</url>`).join('\n')}
 </urlset>`
 }
 
