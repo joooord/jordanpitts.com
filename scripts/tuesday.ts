@@ -34,6 +34,26 @@ const DEFAULT_MODEL = process.env.MODEL ?? 'claude-opus-5'
 const DRY_RUN = process.env.DRY_RUN === 'true'
 const FORCE = process.env.FORCE === 'true'
 
+/**
+ * Path to a pre-authored iteration payload, in the same JSON shape the generator
+ * returns. When set, the API call is skipped and this file is used instead.
+ *
+ * This is what makes the Cowork-driven mode honest. Without it, an iteration
+ * authored in a Claude session would have to be written into site/ by hand,
+ * bypassing validation, the archive snapshot, the memory heading and the
+ * timeline — i.e. bypassing every gate this project has. With it, a hand-authored
+ * iteration takes exactly the same path as an automated one.
+ */
+const ITERATION_FILE = process.env.ITERATION_FILE
+
+/**
+ * Skip the second-model content review. Only meaningful with ITERATION_FILE, and
+ * only when no API key is available. Never silent: it is logged loudly and
+ * recorded in the memory entry, because an iteration that shipped without the
+ * review is a different kind of artifact and the archive should say so.
+ */
+const SKIP_REVIEW = process.env.SKIP_REVIEW === 'true'
+
 const OUTPUT_START = '<<<OUTPUT_START>>>'
 const OUTPUT_END = '<<<OUTPUT_END>>>'
 
@@ -130,10 +150,18 @@ async function main() {
 
   stage('append logs')
   // The script owns the heading. See scripts/memory.ts for why.
+  // Record how this iteration was actually produced. An iteration authored in a
+  // Cowork session, or one that skipped the review, is a different kind of
+  // artifact from an automated one, and the archive should say so rather than
+  // quietly implying every entry came off the same production line.
+  const provenance: string[] = []
+  if (ITERATION_FILE) provenance.push('Authored in a Cowork session and run through the pipeline (no automated generation call).')
+  if (SKIP_REVIEW) provenance.push('Second-model content review skipped.')
+
   const memoryEntry = buildMemoryEntry({
     date: TODAY,
     version: generated.version,
-    body: generated.memoryEntry,
+    body: provenance.length ? `${generated.memoryEntry.trim()}\nProvenance: ${provenance.join(' ')}` : generated.memoryEntry,
     hadQuestion: !!generated.visitorQuestion,
   })
   await appendFileSafe('memory.md', '\n\n' + memoryEntry + '\n')
@@ -303,6 +331,15 @@ async function copyDirExcluding(src: string, dst: string, excludeNames: string[]
 // ---------- Generation ----------
 
 async function generate(context: Context): Promise<GeneratedIteration> {
+  if (ITERATION_FILE) {
+    const raw = await fs.readFile(ITERATION_FILE, 'utf-8')
+    log(`Using pre-authored iteration from ${ITERATION_FILE} (no API call).`)
+    // Accept the file either bare or wrapped in the sentinels, so the same
+    // payload works whether it came from a model response or was authored directly.
+    const text = raw.includes(OUTPUT_START) ? raw : `${OUTPUT_START}\n${raw}\n${OUTPUT_END}`
+    return parseGeneratorOutput(text, context)
+  }
+
   const system = await read('prompts/system.md')
   const user = buildUserPrompt(context)
 
@@ -397,6 +434,14 @@ async function validateAndReview(g: GeneratedIteration, ctx: Context): Promise<R
     expectedDate: TODAY,
     previousHadQuestion: ctx.previousHadQuestion,
   })
+  if (SKIP_REVIEW) {
+    if (!ITERATION_FILE) {
+      throw new Error('SKIP_REVIEW is only permitted alongside ITERATION_FILE. An automated generation must be reviewed.')
+    }
+    log('WARNING: content review SKIPPED (SKIP_REVIEW=true). This iteration ships on the deterministic gates alone.')
+    return { verdict: 'pass', issues: [], notes: 'Content review skipped: SKIP_REVIEW=true' }
+  }
+
   log('Deterministic validation passed. Running content review.')
 
   const review = await contentReview({
