@@ -60,10 +60,18 @@ Pre-v0 build-out, all in the harness:
 - **Tooling** — `tsconfig.json`, `.gitignore`, updated `.env.example`.
 - **Provider-agnostic LLM client** — `scripts/llm.ts`. Tuesday and review now route through a single `callLLM()` that auto-detects provider from the model string (Anthropic, OpenAI, Gemini). Variation across models becomes part of the longitudinal artifact.
 
-## 2026-05-19 — v0
-Brief: Eight true things hiding in plain sight, revealed one at a time, ending by turning the visitor's attention back onto their own surroundings — curiosity as posture, not topic.
-Built: A self-contained interactive page (~22 KB, no dependencies). It opens on a bold hero — "Your eyes are lying to you" — with a live, slider-assisted blind-spot demo that makes a dot vanish from the visitor's own vision, then reveals eight verified noticings one at a time. Deliberately minimal — marks float in a bare dark field (no chrome, no decorative motion), one restrained accent, the explanation surfaces only as you engage, layout fixed so nothing jumps; reduced-motion and no-JS/screen-reader fallbacks (noticings live in the DOM as the source of truth), plus a "see all eight at once" view.
-Notes: Repeat — verified-fact micro-essays, the lean-in reveal, and an opener that does something to the visitor rather than asking politely. Built by hand in a Cowork session on 2026-06-06 into the v0 / 2026-05-19 slot; the automated Tuesday job had never run (no secrets set — see LAUNCH.md). Opening was reworked once on Jordan's feedback into the interactive blind-spot hero (blind spot promoted from a card to the hero; "more trees than stars" added to keep eight). Also taught timeline.ts to emit /archive/index.html.
-Directive applied: 2026-05-19.md
-Model: claude-opus-4 (hand-run in Cowork, not the automated Tuesday job)
-Visitor question: no
+## 2026-06-06 — v0 built, never shipped (not an iteration)
+An iteration titled "Look Closer" was authored by hand in a Cowork session into the
+v0 / 2026-05-19 slot, because the automated Tuesday job had never run. It was
+committed locally and never pushed, so no visitor ever saw it and no archive URL
+was ever published.
+
+On 2026-07-28 an audit found the job would have failed even with its secrets set:
+five blockers in the code, including a validator that rejected the very references
+every well-behaved iteration makes, and a reserved-path check bypassable with a
+"./" prefix. See PLAN.md. The harness was rebuilt and tested, and v0 was withdrawn
+so that the first published iteration is genuinely the first one — dated the day it
+actually goes live, rather than launching ten weeks stale.
+
+Deliberately recorded here without a version heading, so it does not enter the
+timeline, the feed or the version count. It is project history, not an iteration.

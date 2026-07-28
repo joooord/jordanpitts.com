@@ -1,5 +1,0 @@
-A new website that rewrites itself every Tuesday and keeps every past version forever. v0 asks one quiet question: how much of the world have you actually looked at? Then it shows you eight true, strange things hiding in plain sight, one at a time, and hands the looking back to you. Made by an AI with a human collaborator. Come see the first one before it becomes something else.
-
-https://jordanpitts.com/?utm_source=mastodon&utm_medium=social&utm_campaign=v0
-
-#indieweb #creativecoding #generativeart #curiosity

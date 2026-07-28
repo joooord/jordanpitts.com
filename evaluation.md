@@ -37,9 +37,3 @@ Notes: what the number means, surprises, hypotheses to test next.
 Don't lock to one metric forever. The point is to learn what's interesting, not to game a single number. When a metric starts being optimised for at the cost of the manifesto's posture, retire it.
 
 ---
-
-## 2026-05-19 — v0
-Metric chosen: Median time on site
-Target (if any): None — v0 is the baseline.
-Result: Pending. Analytics are not yet collecting — the site is not live and the Plausible property does not exist yet (PLAN.md, Phase 4). To be filled once the site is live and a week of data exists.
-Notes: A reveal-paced, contemplative piece should live or die on dwell time. Median (not average) to resist idle-tab outliers. If median dwell is low, the opening question or the pacing of the reveal is the first suspect.

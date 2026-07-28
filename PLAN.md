@@ -218,7 +218,57 @@ appear in production, and the CSP would refuse it there anyway.
 
 ---
 
-## Phase 3 — Author v0 properly
+## Phase 3 — Author v0 properly 🟡 STAGED, waiting on one thing
+
+**Blocked only on `ANTHROPIC_API_KEY`**, which is needed for the second-model
+content review. Everything else is done and dry-run clean.
+
+Decisions taken 2026-07-28: restamp v0 to its launch date; author a fresh v0
+rather than reuse "Look Closer"; keep the content review gate.
+
+The unshipped v0 was withdrawn — its entries removed from `memory.md` and
+`evaluation.md`, its archive snapshot and marketing drafts deleted — so the
+version counter now reads `next is v0` with an empty archive, and the first
+published iteration is genuinely first. What happened is recorded in `memory.md`
+without a version heading, so it stays out of the timeline and the version count
+while remaining in the record.
+
+**v0: "This page has six days to live."** Directive in
+`directives/2026-07-28.md`, payload in `iterations/2026-07-28.json`.
+
+The premise it exploits is one only the first iteration has: the archive behind it
+is empty. The page runs a live countdown to Tuesday 06:00 UTC and shows the
+visitor the two addresses it currently occupies — `/` and `/archive/2026-07-28/`
+— identical character for character, and divergent forever from next Tuesday.
+The visitor can open both and check, which is the difference between a claim and
+a demonstration. A last-day passage reveals itself in the final 24 hours.
+
+Verified beyond what the validator can check:
+
+- WCAG AA contrast computed for both light and dark themes. The first pass failed:
+  `--faint` scored 3.18 and 3.80 against the 4.5 requirement, at 11–12px, which
+  WCAG counts as normal text. Corrected to `#706c63` / `#827e6b`, now 4.64 / 4.63.
+  Nothing else in either palette is below 6.0.
+- Degrades without JavaScript: the countdown disappears, the exact replacement
+  time remains as plain text.
+- The ticking counter is not announced to screen readers every second; the exact
+  date carries that load instead.
+- Custom OG image at `assets/og/v0.png`, 1200×630 PNG, matching the page.
+
+### Remaining
+
+- [ ] **[J]** Add `ANTHROPIC_API_KEY` to `.env` (gitignored). Then:
+      `ITERATION_FILE=iterations/2026-07-28.json npm run tuesday:cowork`
+- [ ] Verify the resulting deployment, then Phase 4
+
+### Note for Phase 5
+
+Iterations cannot currently ship their own raster OG image: payload file contents
+are strings, so a PNG cannot travel in the payload, and SVG is banned for OG.
+v0 works around it by committing the image to `assets/`. Either give the generator
+a way to request an OG render, or make that workaround the documented convention.
+
+### Original checklist
 
 Only after Phase 2. This is the part that matters, and it gets a fresh session with room to
 think — not a tail-end of an infrastructure day.
