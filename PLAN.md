@@ -169,9 +169,43 @@ highest-value item in Phase 1.
 
 ---
 
-## Phase 2 — Prove it
+## Phase 2 — Prove it ✅ COMPLETE (2026-07-28), except two items that need the domain
 
-Nothing ships until all of this is green.
+Pushed to `joooord/jordanpitts.com` as branch `main` (`37da1d7`, then `ee1bac0`).
+`master` is untouched — the old Astro site is still there in full. GitHub's default
+branch is now `main`.
+
+**The first push failed to deploy, which is exactly what this phase is for.** The
+Vercel project's framework preset was still `astro` from the superseded site, so
+it ran `astro build` and exited 127. Fixed in `vercel.json` (`framework: null`,
+`buildCommand: null`) rather than in the dashboard, so the deploy config lives in
+the repo and cannot silently drift again. Second push built clean.
+
+Verified against the live preview deployment:
+
+| Check | Result |
+|---|---|
+| `/`, `/archive/`, `/archive/2026-05-19/`, `/timeline/`, `/feed.xml`, `/sitemap.xml`, `/robots.txt`, `/_/analytics.js`, `/_/og-default.png` | all **200**, no redirects |
+| Trailing-slash archive URLs | resolve directly — the 308-redirect problem is gone |
+| Security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy) | all present |
+| `og:image` / `twitter:image` | absolute `https://`, PNG, 30,651 bytes, served as `image/png` |
+| Stale references (`consent.js`, `og-default.svg`, GA4 placeholder, googletagmanager) | **zero**, across all four page types |
+| `feed.xml`, `sitemap.xml` | parse as valid XML |
+| Every URL in the sitemap | resolves 200 on the deployment |
+
+Deferred to Phase 4, because they structurally depend on the domain being live:
+
+- [ ] Paste the URL into Slack, iMessage and X's card validator to confirm the OG
+      image renders. The OG URL is `https://jordanpitts.com/_/og-default.png`, which
+      is correct for production but does not resolve until DNS moves.
+- [ ] Confirm Plausible registers a pageview. `analytics.js` deliberately refuses to
+      load outside production, so a preview cannot exercise it.
+
+One note for later: preview deployments carry Vercel's own `vercel.live` feedback
+script, which is injected by the platform and is not in our HTML. It does not
+appear in production, and the CSP would refuse it there anyway.
+
+### Original checklist
 
 - [ ] `npx tsc --noEmit` clean (currently passes)
 - [ ] `npm test` green
