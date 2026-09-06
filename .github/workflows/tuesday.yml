@@ -1,8 +1,10 @@
 name: Tuesday iteration
 
 on:
-  schedule:
-    - cron: '0 6 * * 2'      # Every Tuesday at 06:00 UTC
+  # Schedule paused 2026-09-06: site/ now carries the river page, which this job
+  # would overwrite. Re-enable the cron below to resume weekly iterations.
+  # schedule:
+  #   - cron: '0 6 * * 2'      # Every Tuesday at 06:00 UTC
   workflow_dispatch:
     inputs:
       dry_run:
