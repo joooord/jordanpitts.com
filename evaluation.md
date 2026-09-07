@@ -37,3 +37,10 @@ Notes: what the number means, surprises, hypotheses to test next.
 Don't lock to one metric forever. The point is to learn what's interesting, not to game a single number. When a metric starts being optimised for at the cost of the manifesto's posture, retire it.
 
 ---
+
+
+## 2026-09-07 — v0
+Metric chosen: Median visit duration
+Target (if any): None. v0 is the baseline.
+Result: Pending.
+Notes: A wordless looping film either holds people or it does not, and median duration is the plainest way to see which. Read the number as a floor: no marketing, near-zero audience, and Plausible only started counting the day the domain reached Vercel. Median rather than mean, to ignore idle tabs.

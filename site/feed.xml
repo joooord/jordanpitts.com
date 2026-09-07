@@ -8,11 +8,11 @@
     <atom:link href="https://jordanpitts.com/feed.xml" rel="self" type="application/rss+xml" />
     
     <item>
-      <title>v0: Eight true things hiding in plain sight, revealed one at a time, ending by turning the visitor&apos;s attention back onto their own surroundings — curiosity as posture, not topic.</title>
-      <link>https://jordanpitts.com/archive/2026-05-19/</link>
-      <guid isPermaLink="true">https://jordanpitts.com/archive/2026-05-19/</guid>
-      <pubDate>Tue, 19 May 2026 06:00:00 GMT</pubDate>
-      <description>A self-contained interactive page (~22 KB, no dependencies). It opens on a bold hero — &quot;Your eyes are lying to you&quot; — with a live, slider-assisted blind-spot demo that makes a dot vanish from the visitor&apos;s own vision, then reveals eight verified noticings one at a time. Deliberately minimal — marks float in a bare dark field (no chrome, no decorative motion), one restrained accent, the explanation surfaces only as you engage, layout fixed so nothing jumps; reduced-motion and no-JS/screen-reader fallbacks (noticings live in the DOM as the source of truth), plus a &quot;see all eight at once&quot; view. — Repeat — verified-fact micro-essays, the lean-in reveal, and an opener that does something to the visitor rather than asking politely. Built by hand in a Cowork session on 2026-06-06 into the v0 / 2026-05-19 slot; the automated Tuesday job had never run (no secrets set — see LAUNCH.md). Opening was reworked once on Jordan&apos;s feedback into the interactive blind-spot hero (blind spot promoted from a card to the hero; &quot;more trees than stars&quot; added to keep eight). Also taught timeline.ts to emit /archive/index.html.</description>
+      <title>v0: A river seen from above, with a man drifting down it: the first published iteration is a wordless nine-second film that loops forever, and the only door is the email button.</title>
+      <link>https://jordanpitts.com/archive/2026-09-07/</link>
+      <guid isPermaLink="true">https://jordanpitts.com/archive/2026-09-07/</guid>
+      <pubDate>Mon, 07 Sep 2026 06:00:00 GMT</pubDate>
+      <description>Full-bleed looping video (assets/video/river-v0.mp4, Kling 3 Pro, 1080p, 3.3 MB, tail-to-head crossfade so the loop has no seam) with a poster frame underneath so nothing flashes black. The glass email button from the previous jordanpitts.com is kept, its rim re-tinted jade and gold. Version, date and archive link sit in one dark pill bottom-left. No other words. Reduced-motion visitors get the still. — The page weight rule was met in letter (text files 8 KB) and broken in spirit (video 3.3 MB); the directive justifies it and the video lives in assets/ so the archive keeps it. Moves to repeat: a single generated shot as the whole page, no copy, one interaction. Moves to retire: none yet, this is the baseline. Anything that felt off: the man is small and slightly oblique rather than dead top-down; a future film should push the camera straighter. This is the first iteration on a live domain, shipped the night DNS moved from SiteGround to Vercel, so it is a Monday, not a Tuesday.</description>
     </item>
   </channel>
 </rss>

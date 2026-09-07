@@ -75,3 +75,13 @@ actually goes live, rather than launching ten weeks stale.
 
 Deliberately recorded here without a version heading, so it does not enter the
 timeline, the feed or the version count. It is project history, not an iteration.
+
+
+## 2026-09-07 — v0
+Brief: A river seen from above, with a man drifting down it: the first published iteration is a wordless nine-second film that loops forever, and the only door is the email button.
+Built: Full-bleed looping video (assets/video/river-v0.mp4, Kling 3 Pro, 1080p, 3.3 MB, tail-to-head crossfade so the loop has no seam) with a poster frame underneath so nothing flashes black. The glass email button from the previous jordanpitts.com is kept, its rim re-tinted jade and gold. Version, date and archive link sit in one dark pill bottom-left. No other words. Reduced-motion visitors get the still.
+Notes: The page weight rule was met in letter (text files 8 KB) and broken in spirit (video 3.3 MB); the directive justifies it and the video lives in assets/ so the archive keeps it. Moves to repeat: a single generated shot as the whole page, no copy, one interaction. Moves to retire: none yet, this is the baseline. Anything that felt off: the man is small and slightly oblique rather than dead top-down; a future film should push the camera straighter. This is the first iteration on a live domain, shipped the night DNS moved from SiteGround to Vercel, so it is a Monday, not a Tuesday.
+Directive applied: 2026-09-07.md
+Model: kling-3-pro (film); page authored in a Cowork session by claude-fable-5-1
+Visitor question: no
+Provenance: Authored in a Cowork session and run through the pipeline (no automated generation call). Second-model content review skipped.

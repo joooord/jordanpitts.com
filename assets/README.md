@@ -7,7 +7,15 @@ Drop files into this directory or its subfolders. Then describe them below. The 
 
 ## What's in here
 
-(empty — drop assets here and describe them in this section)
+### video/
+- `video/river-v0.mp4` — 9 s seamless loop, 1920x1080, silent, 3.3 MB. Aerial shot of a dark river winding through a green African floodplain, a lone man drifting downstream on his back with a wake behind him. Generated with Kling 3 Pro on 2026-09-06 from Jordan's Midjourney references. Project-owned. Used by v0. Do not delete: the archive depends on it.
+
+### img/
+- `img/river-v0-poster.jpg` — first frame of `video/river-v0.mp4`, 1920x1080. Poster/fallback for the video. Used by v0.
+- `img/river-v0-og.jpg` — 1200x630 crop from the same render. Open Graph / Twitter image for v0.
+
+### icons/
+- `icons/favicon.ico`, `icons/favicon.svg`, `icons/favicon-16x16.png`, `icons/favicon-32x32.png`, `icons/apple-touch-icon.png`, `icons/icon-192.png`, `icons/icon-512.png` — the jordanpitts.com favicon set carried over from the previous site. Jordan's own. Reference from any iteration as `/assets/icons/...`.
 
 Suggested categories when adding:
 - `photos/` — original photography, with subject and rights notes
